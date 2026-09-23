@@ -1,39 +1,31 @@
-# GulDar Group — сайт
+# GulDar Group
 
-Сайт ТОО «GulDar Group» (Алматы): обслуживание и ремонт коммерческой недвижимости, поставка электротехники и стройматериалов.
+Сайт ТОО «GulDar Group» (Алматы).
 
-**Статус:** скелет. Тексты-заглушки помечены `TODO`.
+| Папка | Что внутри | Стек |
+|---|---|---|
+| [`frontend/`](frontend/) | сайт | Next.js 16, TypeScript, Tailwind CSS 4 |
+| [`backend/`](backend/) | API: заявки, данные сайта | FastAPI, Python 3.11+ |
 
-## Стек
-
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
-
-## Запуск
+## Быстрый старт
 
 ```bash
+# бэкенд — http://localhost:8000
+cd backend
+python -m venv .venv && .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --port 8000
+
+# фронтенд — http://localhost:3000 (в другом терминале)
+cd frontend
 npm install
-npm run dev   # http://localhost:3000
+cp .env.example .env.local
+npm run dev
 ```
 
-## Структура
+Подробности — в README каждой папки.
 
-```
-src/
-  app/
-    page.tsx            главная
-    uslugi/             услуги
-    produkciya/         продукция
-    o-kompanii/         о компании
-    kontakty/           контакты + форма заявки
-  components/           Header, Footer, Card, PageHeader, ContactForm
-  lib/site.ts           контакты, меню, услуги, товары — править здесь
-```
+## Статус
 
-## Что дальше
-
-- [ ] Тексты и контакты от заказчика (`src/lib/site.ts`)
-- [ ] Логотип и фирменные цвета (`src/app/globals.css`)
-- [ ] Отправка формы заявки (Telegram / почта)
-- [ ] Портфолио объектов, отзывы
-- [ ] Карта 2GIS на странице контактов
-- [ ] Деплой на Vercel, домен
+Скелет проекта. Контент-заглушки помечены `TODO`.
