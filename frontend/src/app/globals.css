@@ -103,7 +103,7 @@ body::after {
   .display {
     font-family: var(--font-display);
     font-size: clamp(2.6rem, 3.8vw + 0.6rem, 5rem);
-    line-height: 1.04; /* место под кратку «Й» и «Ё» в заглавных */
+    line-height: 1.1; /* место под кратку «Й» и «Ё» в заглавных */
     letter-spacing: 0.002em;
     font-weight: 600;
     text-transform: uppercase;
@@ -111,7 +111,7 @@ body::after {
   .title {
     font-family: var(--font-display);
     font-size: clamp(2rem, 3vw + 0.5rem, 3.3rem);
-    line-height: 1.06;
+    line-height: 1.1;
     letter-spacing: 0.005em;
     font-weight: 600;
     text-transform: uppercase;
