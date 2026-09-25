@@ -148,6 +148,18 @@ const paths = {
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   arrowUpRight: <path d="M7 7h10v10M7 17 17 7" />,
   menu: <path d="M4 8h16M4 16h16" />,
+  sidebarOpen: (
+    <>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M9 3v18M14 9l3 3-3 3" />
+    </>
+  ),
+  sidebarClose: (
+    <>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M9 3v18M16 15l-3-3 3-3" />
+    </>
+  ),
   close: <path d="M18 6 6 18M6 6l12 12" />,
 } satisfies Record<string, ReactNode>;
 

@@ -20,14 +20,14 @@ export default function AboutPage() {
     <>
       <PageHeader
         eyebrow="О компании"
-        title="Строим, ремонтируем и обслуживаем"
-        lead={`${site.legalName} работает в Алматы с ${site.foundedYear} года. Ремонтируем офисы, магазины и торговые площади, обслуживаем здания, строим из металлоконструкций и поставляем материалы.`}
+        title="Ремонтируем и обслуживаем с 2015 года"
+        lead="Офисы, магазины и торговые площади в Алматы. Плюс металлоконструкции и поставка материалов."
       />
       <Container className="space-y-20 pb-8">
         <Reveal>
-          <div className="panel rounded-xl p-6 sm:p-10">
+          <div className="panel rounded-3xl p-6 sm:p-10">
             <p className="eyebrow">Среди клиентов</p>
-            <ul className="mt-5 flex flex-wrap gap-x-10 gap-y-4 text-3xl font-medium font-display tracking-[0.03em] uppercase sm:text-4xl">
+            <ul className="mt-5 flex flex-wrap gap-x-10 gap-y-4 text-3xl font-medium sm:text-4xl">
               {clients.map((c) => (
                 <li key={c}>{c}</li>
               ))}
@@ -37,13 +37,13 @@ export default function AboutPage() {
 
         <section>
           <Reveal>
-            <SectionHead index="01" eyebrow="Как работаем" title="Договор, гарантия и один ответственный" />
+            <SectionHead eyebrow="Как работаем" title="Договор, гарантия и один ответственный" />
           </Reveal>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {advantages.map((a, i) => (
               <Reveal key={a.title} delay={(i % 2) * 70}>
-                <div className="panel h-full rounded-lg border-l-2 border-l-safety p-6">
-                  <h3 className="text-xl leading-tight font-medium font-display tracking-[0.03em] uppercase">{a.title}</h3>
+                <div className="panel h-full rounded-2xl border-l-2 border-l-safety p-6">
+                  <h3 className="text-xl leading-tight font-bold">{a.title}</h3>
                   <p className="mt-2 leading-relaxed text-fg-2">{a.text}</p>
                 </div>
               </Reveal>
@@ -53,14 +53,14 @@ export default function AboutPage() {
 
         <section>
           <Reveal>
-            <SectionHead index="02" eyebrow="Реквизиты" title="Данные компании" />
+            <SectionHead eyebrow="Реквизиты" title="Данные компании" />
           </Reveal>
           <Reveal>
-            <dl className="panel mt-8 divide-y divide-line rounded-xl px-6">
+            <dl className="panel mt-8 divide-y divide-line rounded-3xl px-6">
               {requisites.map(([k, v]) => (
                 <div key={k} className="grid gap-1 py-4 sm:grid-cols-[12rem_1fr]">
                   <dt className="text-sm text-fg-3">{k}</dt>
-                  <dd className="font-medium">{v}</dd>
+                  <dd className="font-bold">{v}</dd>
                 </div>
               ))}
             </dl>

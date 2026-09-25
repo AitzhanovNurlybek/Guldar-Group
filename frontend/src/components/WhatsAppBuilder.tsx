@@ -30,7 +30,7 @@ function Chips({
 }) {
   return (
     <fieldset>
-      <legend className="font-display text-sm tracking-[0.1em] text-fg-3 uppercase">{label}</legend>
+      <legend className="text-sm font-semibold text-fg-2">{label}</legend>
       <div className="mt-2.5 flex flex-wrap gap-2">
         {options.map((o) => {
           const on = value === o;
@@ -40,7 +40,7 @@ function Chips({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on ? null : o)}
-              className={`h-10 rounded-md border px-3.5 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
+              className={`h-10 rounded-full border px-4 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
                 on
                   ? "border-safety bg-safety text-[#1a0e02]"
                   : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
@@ -79,31 +79,31 @@ export function WhatsAppBuilder() {
         <Chips label="Какой объект" options={places} value={place} onChange={setPlace} />
         <div className="grid gap-6 sm:grid-cols-[10rem_1fr]">
           <label className="block">
-            <span className="font-display text-sm tracking-[0.1em] text-fg-3 uppercase">Площадь, м²</span>
+            <span className="text-sm font-semibold text-fg-2">Площадь, м²</span>
             <input
               inputMode="numeric"
               value={area}
               onChange={(e) => setArea(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="120"
-              className="mt-2.5 h-11 w-full rounded-md border border-line-strong bg-ink-900/60 px-4 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
+              className="mt-2.5 h-11 w-full rounded-xl border border-line-strong bg-ink-900/60 px-4 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
             />
           </label>
           <Chips label="Когда начать" options={terms} value={term} onChange={setTerm} />
         </div>
         <label className="block">
-          <span className="font-display text-sm tracking-[0.1em] text-fg-3 uppercase">Комментарий</span>
+          <span className="text-sm font-semibold text-fg-2">Комментарий</span>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             placeholder="Например: заменить освещение в торговом зале, работать ночью"
-            className="mt-2.5 w-full resize-none rounded-md border border-line-strong bg-ink-900/60 px-4 py-3 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
+            className="mt-2.5 w-full resize-none rounded-xl border border-line-strong bg-ink-900/60 px-4 py-3 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
           />
         </label>
       </div>
 
       {/* Превью: так сообщение увидит менеджер */}
-      <div className="flex flex-col rounded-lg border border-line bg-ink-950/70 p-5">
+      <div className="flex flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
         <div className="flex items-center gap-3 border-b border-line pb-4">
           <span className="grid size-10 place-items-center rounded-full bg-[#25d366]/15 text-[#25d366]">
             <WhatsAppIcon className="size-5" />
@@ -116,7 +116,7 @@ export function WhatsAppBuilder() {
         <div className="flex flex-1 items-end py-5">
           <div
             aria-live="polite"
-            className="ml-auto max-w-[92%] rounded-lg rounded-br-sm bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg"
+            className="ml-auto max-w-[92%] rounded-2xl rounded-br-md bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg"
           >
             {message}
           </div>

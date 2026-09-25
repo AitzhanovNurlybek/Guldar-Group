@@ -4,9 +4,9 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 
 // three.js грузится отдельным чанком уже после первой отрисовки страницы
-const ConstructionScene = dynamic(() => import("./ConstructionScene"), { ssr: false });
+const RenovationScene = dynamic(() => import("./RenovationScene"), { ssr: false });
 
-// Стройка живёт за контентом всего сайта. На первом экране — в полную силу,
+// Макет помещения живёт за контентом всего сайта. На первом экране — в полную силу,
 // дальше приглушается, чтобы не мешать читать.
 export function SceneBackground() {
   const ref = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export function SceneBackground() {
       aria-hidden
       className="scene-layer pointer-events-none fixed top-16 right-0 z-0 h-[40svh] w-full lg:top-0 lg:h-dvh lg:w-[54vw]"
     >
-      <ConstructionScene />
+      <RenovationScene />
     </div>
   );
 }

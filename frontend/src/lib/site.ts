@@ -170,12 +170,11 @@ export const productGroups: { title: string; text: string; icon: IconName }[] = 
 // satu.kz → «Основные клиенты». TODO: подтвердить, что названия можно показывать на сайте
 export const clients = ["Sulpak", "Kcell", "Evrika", "Jusan Mobile", "ТД «Пассаж»"];
 
-export const steps = [
-  { title: "Пишете в WhatsApp", text: "Адрес, пара фото и задача — этого хватит для начала." },
-  { title: "Выезжаем на объект", text: "Смотрим помещение, делаем замеры, уточняем сроки." },
-  { title: "Считаем смету", text: "Цену фиксируем в договоре до начала работ." },
-  { title: "Делаем ремонт", text: "Контролируем качество на каждом этапе." },
-  { title: "Сдаём объект", text: "Подписываем акт и даём гарантию на работы." },
+export const steps: { title: string; icon: IconName }[] = [
+  { title: "Пишете в WhatsApp", icon: "phone" },
+  { title: "Выезжаем и замеряем", icon: "ruler" },
+  { title: "Смета и договор", icon: "shield" },
+  { title: "Ремонт и сдача с гарантией", icon: "key" },
 ];
 
 export const advantages = [
@@ -191,7 +190,7 @@ export const projects: { title: string; place: string; image: string }[] = [
   // { title: "Ремонт торгового зала", place: "ТРЦ, Алматы", image: "/photos/01.jpg" },
 ];
 
-// 3D на фоне сайта — стройка (кран и здание из логотипа), рисуется кодом и крутится при прокрутке.
+// 3D на фоне сайта — макет помещения «до и после ремонта», рисуется кодом и крутится при прокрутке.
 // Чтобы заменить своей моделью — положите .glb в public/models/ и укажите путь, например "/models/building.glb".
-// Размер подгоняется автоматически; битый или отсутствующий файл — останется стройка.
+// Размер подгоняется автоматически; битый или отсутствующий файл — останется макет.
 export const backgroundModel: string | null = null;

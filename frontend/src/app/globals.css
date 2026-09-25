@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Стиль — строительный: синий из логотипа (#195177, #6d94ae) + сигнальный оранжевый,
- * как на кранах и спецтехнике. Узкий шрифт заглавными, прямые углы, бетон и сталь.
+ * Стиль: синий из логотипа (#195177, #6d94ae) + сигнальный оранжевый, как на спецтехнике.
+ * Современный гротеск Manrope, короткие тексты, мягкие скругления, сигнальная лента как акцент.
  */
 :root {
   --ink-950: #05090f;
@@ -48,8 +48,8 @@
   --color-fg-3: var(--fg-3);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-oswald), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-display: var(--font-manrope), system-ui, sans-serif;
 }
 
 html {
@@ -61,7 +61,7 @@ body {
   color: var(--fg);
 }
 
-/* Фон — фиксированные слои под контентом: ночное небо стройки и миллиметровка.
+/* Фон — фиксированные слои под контентом: тёмно-синий градиент и миллиметровка.
    Через псевдоэлементы, а не background-attachment: fixed — тот не работает в iOS Safari. */
 body::before,
 body::after {
@@ -99,38 +99,34 @@ body::after {
 }
 
 @layer components {
-  /* Типографика: узкий гротеск заглавными — как на строительных табличках */
+  /* Типографика: крупно и плотно в заголовках, трекинг сжимается с ростом кегля */
   .display {
-    font-family: var(--font-display);
-    font-size: clamp(2.6rem, 3.8vw + 0.6rem, 5rem);
-    line-height: 1.1; /* место под кратку «Й» и «Ё» в заглавных */
-    letter-spacing: 0.002em;
-    font-weight: 600;
-    text-transform: uppercase;
+    font-size: clamp(2.5rem, 3.4vw + 0.9rem, 4.6rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    font-weight: 800;
   }
   .title {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 3vw + 0.5rem, 3.3rem);
+    font-size: clamp(1.8rem, 2vw + 1rem, 2.8rem);
     line-height: 1.1;
-    letter-spacing: 0.005em;
-    font-weight: 600;
-    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    font-weight: 800;
   }
   .eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    font-family: var(--font-display);
-    font-size: 0.9rem;
-    letter-spacing: 0.14em;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    font-weight: 500;
+    font-weight: 700;
     color: var(--safety);
   }
   .eyebrow::before {
     content: "";
-    width: 0.55rem;
-    height: 0.55rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 2px;
     background: var(--safety);
   }
   .accent-text {
@@ -178,15 +174,13 @@ body::after {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    height: 3.25rem;
-    padding: 0 1.5rem;
-    border-radius: 6px;
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: 1rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    gap: 0.55rem;
+    height: 3.1rem;
+    padding: 0 1.35rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
     white-space: nowrap;
     transition:
       transform 160ms var(--ease-fluid),
