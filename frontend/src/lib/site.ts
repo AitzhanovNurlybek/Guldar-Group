@@ -191,13 +191,7 @@ export const projects: { title: string; place: string; image: string }[] = [
   // { title: "Ремонт торгового зала", place: "ТРЦ, Алматы", image: "/photos/01.jpg" },
 ];
 
-// 3D-модели для главной. По умолчанию объекты рисуются кодом.
-// Чтобы заменить объект своей моделью — положите .glb в public/models/ и укажите путь, например "/models/cabinet.glb".
-export const heroModels: Record<"tower" | "cabinet" | "valve" | "helmet" | "roller" | "bulb", string | null> = {
-  tower: null,
-  cabinet: null,
-  valve: null,
-  helmet: null,
-  roller: null,
-  bulb: null,
-};
+// 3D на фоне сайта — стройка (кран и здание из логотипа), рисуется кодом и крутится при прокрутке.
+// Чтобы заменить своей моделью — положите .glb в public/models/ и укажите путь, например "/models/building.glb".
+// Размер подгоняется автоматически; битый или отсутствующий файл — останется стройка.
+export const backgroundModel: string | null = null;

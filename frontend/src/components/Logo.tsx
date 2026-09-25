@@ -29,11 +29,11 @@ export function Logo({ compact = false }: { compact?: boolean }) {
     <span className="flex items-center gap-2.5">
       <LogoMark className="size-10 shrink-0" />
       <span className="leading-none">
-        <span className="block text-[1.05rem] font-bold tracking-[-0.02em] text-fg">
-          GULDAR <span className="font-medium text-ice-300">Group</span>
+        <span className="block font-display text-[1.3rem] font-semibold tracking-[0.03em] text-fg uppercase">
+          Guldar <span className="font-medium text-ice-300">Group</span>
         </span>
         {!compact && (
-          <span className="mt-1 block text-[0.5rem] font-semibold tracking-[0.1em] whitespace-nowrap text-signal/90 uppercase">
+          <span className="mt-1 block text-[0.5rem] font-semibold tracking-[0.1em] whitespace-nowrap text-signal uppercase">
             {site.motto}
           </span>
         )}

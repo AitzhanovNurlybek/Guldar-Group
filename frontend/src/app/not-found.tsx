@@ -7,7 +7,7 @@ export default function NotFound() {
       <div>
         <p className="eyebrow">Ошибка 404</p>
         <h1 className="display mt-3">
-          <span className="gradient-text">Такой страницы нет</span>
+          Такой страницы нет
         </h1>
         <Link href="/" className="btn btn-primary mt-8">
           На главную

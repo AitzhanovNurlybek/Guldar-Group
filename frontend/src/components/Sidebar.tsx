@@ -7,12 +7,11 @@ import { Icon, WhatsAppIcon } from "./Icons";
 import { Logo } from "./Logo";
 import { nav, site, waGreeting, waLink } from "@/lib/site";
 
-const ITEM = 44; // высота пункта, px
-const GAP = 4;
+const ITEM = 46; // высота пункта, px
+const GAP = 2;
 
 function activeIndex(pathname: string) {
-  const i = nav.findIndex((n) => (n.href === "/" ? pathname === "/" : pathname.startsWith(n.href)));
-  return i;
+  return nav.findIndex((n) => (n.href === "/" ? pathname === "/" : pathname.startsWith(n.href)));
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
@@ -20,10 +19,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const idx = activeIndex(pathname);
   return (
     <nav aria-label="Основное меню" className="relative">
-      {/* Подсветка активного пункта переезжает, а не мигает */}
+      {/* Отметка активного пункта переезжает, а не мигает */}
       <span
         aria-hidden
-        className="absolute inset-x-0 top-0 rounded-2xl bg-white/[0.08] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] transition-[transform,opacity] duration-500 ease-(--ease-fluid)"
+        className="absolute inset-x-0 top-0 rounded-md bg-white/[0.05] transition-[transform,opacity] duration-500 ease-(--ease-fluid) before:absolute before:inset-y-2.5 before:left-0 before:w-[3px] before:bg-safety"
         style={{ height: ITEM, transform: `translateY(${Math.max(idx, 0) * (ITEM + GAP)}px)`, opacity: idx < 0 ? 0 : 1 }}
       />
       <ul className="relative flex flex-col" style={{ gap: GAP }}>
@@ -35,12 +34,12 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-2xl px-3.5 text-[0.95rem] font-medium transition-colors duration-200 active:scale-[0.98] ${
+                className={`flex items-center gap-3 rounded-md px-4 font-display text-[0.98rem] font-medium tracking-[0.06em] uppercase transition-colors duration-200 active:scale-[0.98] ${
                   active ? "text-fg" : "text-fg-2 hover:text-fg"
                 }`}
                 style={{ height: ITEM }}
               >
-                <Icon name={item.icon} className={`size-[1.15rem] ${active ? "text-sky-400" : ""}`} />
+                <Icon name={item.icon} className={`size-[1.1rem] ${active ? "text-safety" : ""}`} />
                 {item.label}
               </Link>
             </li>
@@ -53,20 +52,23 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
 function ContactCard() {
   return (
-    <div className="rounded-3xl border border-line bg-gradient-to-b from-steel-600/35 to-navy-700/20 p-4">
-      <p className="text-sm font-semibold">Обсудим ваш объект?</p>
-      <p className="mt-1 text-xs leading-relaxed text-fg-2">Пришлите адрес и пару фото — ответим в WhatsApp.</p>
-      <a href={waLink(waGreeting)} target="_blank" rel="noopener" className="btn btn-wa mt-3 h-10 w-full text-sm">
-        <WhatsAppIcon className="size-4" />
-        Написать
-      </a>
-      <a
-        href={`tel:+${site.whatsapp}`}
-        className="mt-3 flex items-center justify-center gap-2 text-xs font-medium text-fg-2 hover:text-fg"
-      >
-        <Icon name="phone" className="size-3.5" />
-        {site.phone}
-      </a>
+    <div className="overflow-hidden rounded-lg border border-line bg-ink-850">
+      <div className="hazard h-1.5" aria-hidden />
+      <div className="p-4">
+        <p className="font-display text-lg font-medium tracking-[0.02em] uppercase">Обсудим объект?</p>
+        <p className="mt-1 text-xs leading-relaxed text-fg-2">Пришлите адрес и пару фото — ответим в WhatsApp.</p>
+        <a href={waLink(waGreeting)} target="_blank" rel="noopener" className="btn btn-accent mt-3 h-11 w-full text-[0.9rem]">
+          <WhatsAppIcon className="size-4" />
+          Написать
+        </a>
+        <a
+          href={`tel:+${site.whatsapp}`}
+          className="mt-3 flex items-center justify-center gap-2 text-xs font-medium text-fg-2 hover:text-fg"
+        >
+          <Icon name="phone" className="size-3.5" />
+          {site.phone}
+        </a>
+      </div>
     </div>
   );
 }
@@ -88,8 +90,8 @@ export function Sidebar() {
   return (
     <>
       {/* Десктоп: плавающая панель слева */}
-      <aside className="glass-heavy fixed inset-y-4 left-4 z-40 hidden w-64 flex-col rounded-[28px] p-4 lg:flex">
-        <Link href="/" className="px-2 pt-1 pb-6" aria-label="На главную">
+      <aside className="bar fixed inset-y-4 left-4 z-40 hidden w-64 flex-col rounded-xl p-4 lg:flex">
+        <Link href="/" className="px-2 pt-1 pb-7" aria-label="На главную">
           <Logo />
         </Link>
         <NavList />
@@ -104,7 +106,7 @@ export function Sidebar() {
       </aside>
 
       {/* Мобильная верхняя панель */}
-      <header className="glass-heavy fixed inset-x-3 top-3 z-40 flex h-14 items-center justify-between rounded-2xl pr-2 pl-3 lg:hidden">
+      <header className="bar fixed inset-x-3 top-3 z-40 flex h-14 items-center justify-between rounded-xl pr-2 pl-3 lg:hidden">
         <Link href="/" aria-label="На главную">
           <Logo compact />
         </Link>
@@ -113,7 +115,7 @@ export function Sidebar() {
           onClick={() => setOpen(true)}
           aria-label="Открыть меню"
           aria-expanded={open}
-          className="grid size-10 place-items-center rounded-xl text-fg transition-transform active:scale-95"
+          className="grid size-10 place-items-center rounded-md text-fg transition-transform active:scale-95"
         >
           <Icon name="menu" className="size-6" />
         </button>
@@ -121,7 +123,7 @@ export function Sidebar() {
 
       {/* Мобильное меню: выезжает слева и уходит туда же */}
       <div
-        className={`fixed inset-0 z-50 bg-ink-950/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-50 bg-ink-950/70 transition-opacity duration-300 lg:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setOpen(false)}
@@ -130,7 +132,7 @@ export function Sidebar() {
       <aside
         inert={!open}
         aria-label="Меню"
-        className={`glass-heavy fixed inset-y-3 left-3 z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col rounded-[28px] p-4 transition-transform duration-500 ease-(--ease-fluid) lg:hidden ${
+        className={`bar fixed inset-y-3 left-3 z-50 flex w-[min(20rem,calc(100vw-1.5rem))] flex-col rounded-xl p-4 transition-transform duration-500 ease-(--ease-fluid) lg:hidden ${
           open ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]"
         }`}
       >
@@ -140,7 +142,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Закрыть меню"
-            className="grid size-10 place-items-center rounded-xl text-fg-2 transition-transform active:scale-95"
+            className="grid size-10 place-items-center rounded-md text-fg-2 transition-transform active:scale-95"
           >
             <Icon name="close" className="size-5" />
           </button>
@@ -173,7 +175,7 @@ export function WhatsAppFab() {
       rel="noopener"
       tabIndex={shown ? undefined : -1}
       aria-hidden={!shown}
-      className={`btn btn-wa fixed right-4 bottom-4 z-30 h-13 pr-5 pl-4 shadow-[0_18px_40px_-12px_rgb(37_211_102/0.7)] transition-[translate,opacity] duration-500 ease-(--ease-fluid) lg:hidden ${
+      className={`btn btn-accent fixed right-4 bottom-4 z-30 h-13 pr-5 pl-4 shadow-[0_18px_40px_-12px_rgb(245_135_31/0.7)] transition-[translate,opacity] duration-500 ease-(--ease-fluid) lg:hidden ${
         shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
       }`}
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}

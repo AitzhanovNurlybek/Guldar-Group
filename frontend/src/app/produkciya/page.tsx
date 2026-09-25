@@ -23,15 +23,15 @@ export default function ProductsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {productGroups.map((p, i) => (
             <Reveal key={p.title} delay={(i % 2) * 70}>
-              <article className="glass lift flex h-full flex-col rounded-[26px] p-6 sm:p-8">
+              <article className="panel lift flex h-full flex-col rounded-lg p-6 sm:p-8">
                 <IconTile name={p.icon} />
-                <h2 className="mt-5 text-xl font-semibold tracking-[-0.015em]">{p.title}</h2>
+                <h2 className="mt-5 text-2xl leading-tight font-medium font-display tracking-[0.03em] uppercase">{p.title}</h2>
                 <p className="mt-2 flex-1 leading-relaxed text-fg-2">{p.text}</p>
                 <a
                   href={waLink(`Здравствуйте! Нужен прайс: ${p.title.toLowerCase()}.`)}
                   target="_blank"
                   rel="noopener"
-                  className="mt-6 inline-flex items-center gap-2 self-start text-sm font-semibold text-sky-400 hover:text-ice-300"
+                  className="mt-6 inline-flex items-center gap-2 self-start font-display text-sm font-medium tracking-[0.08em] text-safety uppercase hover:text-fg"
                 >
                   <WhatsAppIcon className="size-4" />
                   Запросить прайс
@@ -42,7 +42,7 @@ export default function ProductsPage() {
         </div>
 
         <Reveal>
-          <div className="glass-heavy flex flex-wrap items-center justify-between gap-6 rounded-[32px] p-6 sm:p-10">
+          <div className="panel-strong flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-xl border-t-4 border-t-safety p-6 sm:p-10">
             <div className="max-w-xl">
               <h2 className="title">Есть список материалов?</h2>
               <p className="mt-3 text-lg text-fg-2">Отправьте его фото или файлом в WhatsApp — ответим с ценами и сроками.</p>
@@ -52,7 +52,7 @@ export default function ProductsPage() {
                 href={waLink("Здравствуйте! Хочу заказать материалы, пришлю список.")}
                 target="_blank"
                 rel="noopener"
-                className="btn btn-wa"
+                className="btn btn-accent"
               >
                 <WhatsAppIcon />
                 Отправить список

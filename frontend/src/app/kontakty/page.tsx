@@ -26,16 +26,16 @@ export default function ContactsPage() {
               <a
                 href={c.href}
                 {...(c.external ? { target: "_blank", rel: "noopener" } : {})}
-                className="glass lift flex h-full flex-col rounded-[26px] p-6"
+                className="panel lift flex h-full flex-col rounded-lg p-6"
               >
                 <span
-                  className={`grid size-11 place-items-center rounded-2xl ${
-                    c.icon === "wa" ? "bg-wa/15 text-wa" : "bg-sky-400/15 text-sky-400"
+                  className={`grid size-11 place-items-center rounded-md ${
+                    c.icon === "wa" ? "bg-[#25d366]/15 text-[#25d366]" : "bg-steel-600/40 text-ice-300"
                   }`}
                 >
                   {c.icon === "wa" ? <WhatsAppIcon /> : <Icon name={c.icon} />}
                 </span>
-                <span className="mt-5 text-sm text-fg-3">{c.label}</span>
+                <span className="mt-5 font-display text-sm tracking-[0.1em] text-fg-3 uppercase">{c.label}</span>
                 <span className="mt-1 font-semibold leading-snug">{c.value}</span>
               </a>
             </Reveal>
@@ -43,7 +43,7 @@ export default function ContactsPage() {
         </div>
 
         <Reveal>
-          <div className="glass-heavy rounded-[32px] p-6 sm:p-10">
+          <div className="panel-strong overflow-hidden rounded-xl border-t-4 border-t-safety p-6 sm:p-10">
             <h2 className="title">Расскажите об объекте</h2>
             <p className="mt-3 max-w-xl text-lg text-fg-2">Отметьте пару вариантов — сообщение соберётся само.</p>
             <div className="mt-8">
@@ -57,13 +57,13 @@ export default function ContactsPage() {
             href={site.gis}
             target="_blank"
             rel="noopener"
-            className="glass lift flex flex-wrap items-center justify-between gap-4 rounded-[26px] p-6"
+            className="panel lift flex flex-wrap items-center justify-between gap-4 rounded-lg p-6"
           >
             <span>
-              <span className="block font-semibold">Открыть в 2GIS</span>
+              <span className="block text-lg font-medium font-display tracking-[0.03em] uppercase">Открыть в 2GIS</span>
               <span className="mt-1 block text-sm text-fg-2">{site.address}</span>
             </span>
-            <Icon name="arrowUpRight" className="size-5 text-sky-400" />
+            <Icon name="arrowUpRight" className="size-5 text-safety" />
           </a>
         </Reveal>
       </Container>

@@ -23,7 +23,7 @@ export default function ServicesPage() {
         {serviceGroups.map((g) => (
           <section key={g.title}>
             <Reveal className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-4">
-              <h2 className="text-2xl font-semibold tracking-[-0.02em]">{g.title}</h2>
+              <h2 className="text-3xl font-semibold font-display tracking-[0.03em] uppercase">{g.title}</h2>
               <p className="text-fg-2">{g.lead}</p>
             </Reveal>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -37,7 +37,7 @@ export default function ServicesPage() {
         ))}
 
         <Reveal>
-          <div className="glass-heavy flex flex-wrap items-center justify-between gap-6 rounded-[32px] p-6 sm:p-10">
+          <div className="panel-strong flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-xl border-t-4 border-t-safety p-6 sm:p-10">
             <div className="max-w-xl">
               <h2 className="title">Не нашли свою задачу?</h2>
               <p className="mt-3 text-lg text-fg-2">Опишите её в WhatsApp — скажем, возьмёмся ли и сколько это будет стоить.</p>
@@ -46,7 +46,7 @@ export default function ServicesPage() {
               href={waLink("Здравствуйте! У меня задача, которой нет в списке услуг:")}
               target="_blank"
               rel="noopener"
-              className="btn btn-wa"
+              className="btn btn-accent"
             >
               <WhatsAppIcon />
               Написать в WhatsApp

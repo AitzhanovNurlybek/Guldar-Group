@@ -1,13 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Oswald } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Sidebar, WhatsAppFab } from "@/components/Sidebar";
+import { SceneBackground } from "@/components/three/SceneBackground";
 import { site } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "cyrillic"],
+});
+
+// Узкий гротеск для заголовков и кнопок — строительная «табличка»
+const oswald = Oswald({
+  variable: "--font-oswald",
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -17,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#071220",
+  themeColor: "#08111b",
 };
 
 // Карточка компании для поисковиков и карт
@@ -44,14 +52,15 @@ const jsonLd = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${inter.variable} antialiased`}>
+    <html lang="ru" className={`${inter.variable} ${oswald.variable} antialiased`}>
       <body className="min-h-dvh font-sans">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
         />
+        <SceneBackground />
         <Sidebar />
-        <div className="flex min-h-dvh flex-col lg:pl-72">
+        <div className="relative z-10 flex min-h-dvh flex-col lg:pl-72">
           <main className="flex-1">{children}</main>
           <Footer />
         </div>
