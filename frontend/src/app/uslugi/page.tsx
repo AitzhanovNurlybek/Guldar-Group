@@ -1,19 +1,58 @@
 import type { Metadata } from "next";
-import { Card } from "@/components/Card";
 import { Container } from "@/components/Container";
+import { WhatsAppIcon } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
-import { services } from "@/lib/site";
+import { Reveal } from "@/components/Reveal";
+import { ServiceCard } from "@/components/ServiceCard";
+import { serviceGroups, waLink } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Услуги" };
+export const metadata: Metadata = {
+  title: "Услуги и цены",
+  description: "Ремонт под ключ, отделка, электромонтаж, сантехника, техобслуживание и металлоконструкции в Алматы. Цены от 10 000 ₸.",
+};
 
 export default function ServicesPage() {
   return (
     <>
-      <PageHeader title="Услуги" lead="TODO: вводный абзац об услугах." />
-      <Container className="grid gap-4 py-12 sm:grid-cols-2">
-        {services.map((s) => (
-          <Card key={s.slug} title={s.title} text={s.text} />
+      <PageHeader
+        eyebrow="Услуги и цены"
+        title="От розетки до здания"
+        lead="Цены — ориентир. Точную сумму считаем после выезда на объект и фиксируем в договоре."
+      />
+      <Container className="space-y-16 pb-8">
+        {serviceGroups.map((g) => (
+          <section key={g.title}>
+            <Reveal className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-4">
+              <h2 className="text-2xl font-semibold tracking-[-0.02em]">{g.title}</h2>
+              <p className="text-fg-2">{g.lead}</p>
+            </Reveal>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {g.items.map((s, i) => (
+                <Reveal key={s.slug} delay={(i % 3) * 70}>
+                  <ServiceCard {...s} />
+                </Reveal>
+              ))}
+            </div>
+          </section>
         ))}
+
+        <Reveal>
+          <div className="glass-heavy flex flex-wrap items-center justify-between gap-6 rounded-[32px] p-6 sm:p-10">
+            <div className="max-w-xl">
+              <h2 className="title">Не нашли свою задачу?</h2>
+              <p className="mt-3 text-lg text-fg-2">Опишите её в WhatsApp — скажем, возьмёмся ли и сколько это будет стоить.</p>
+            </div>
+            <a
+              href={waLink("Здравствуйте! У меня задача, которой нет в списке услуг:")}
+              target="_blank"
+              rel="noopener"
+              className="btn btn-wa"
+            >
+              <WhatsAppIcon />
+              Написать в WhatsApp
+            </a>
+          </div>
+        </Reveal>
       </Container>
     </>
   );

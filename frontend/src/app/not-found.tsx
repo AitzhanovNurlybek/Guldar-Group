@@ -3,11 +3,16 @@ import { Container } from "@/components/Container";
 
 export default function NotFound() {
   return (
-    <Container className="py-24 text-center">
-      <h1 className="text-3xl font-bold">Страница не найдена</h1>
-      <Link href="/" className="mt-6 inline-block text-accent">
-        На главную
-      </Link>
+    <Container className="grid min-h-[70dvh] place-items-center pt-24 text-center lg:pt-0">
+      <div>
+        <p className="eyebrow">Ошибка 404</p>
+        <h1 className="display mt-3">
+          <span className="gradient-text">Такой страницы нет</span>
+        </h1>
+        <Link href="/" className="btn btn-primary mt-8">
+          На главную
+        </Link>
+      </div>
     </Container>
   );
 }
