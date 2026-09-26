@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Container, SectionHead } from "@/components/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
-import { advantages, clients, site } from "@/lib/site";
+import { ClientLogos } from "@/components/ClientLogos";
+import { advantages, site } from "@/lib/site";
 
 export const metadata: Metadata = { title: "О компании" };
 
@@ -27,11 +28,9 @@ export default function AboutPage() {
         <Reveal>
           <div className="panel-glass rounded-3xl p-6 sm:p-10">
             <p className="eyebrow">Среди клиентов</p>
-            <ul className="mt-5 flex flex-wrap gap-x-10 gap-y-4 text-3xl font-medium sm:text-4xl">
-              {clients.map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
+            <div className="mt-5">
+              <ClientLogos size="lg" />
+            </div>
           </div>
         </Reveal>
 

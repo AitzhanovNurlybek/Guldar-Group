@@ -31,11 +31,19 @@ export function SceneBackground() {
 
   useEffect(
     () =>
-      subscribeScroll(({ progress, hero }) => {
+      subscribeScroll(({ progress, hero, finale }) => {
         const desktop = window.innerWidth >= 1024;
         const min = desktop ? 0.5 : 0.12;
-        const t = Math.min(hero / 0.7, 1);
-        if (scene.current) scene.current.style.opacity = String(1 - (1 - min) * t);
+        let o = 1 - (1 - min) * Math.min(hero / 0.7, 1);
+        // К блоку «Результат» макет снова разгорается: ремонт закончен, результат виден до подвала
+        if (finale !== null) {
+          const peak = desktop ? 1 : 0.9;
+          const tail = desktop ? 0.85 : 0.4; // на телефоне под блоком текст поверх макета — приглушаем
+          const approach = finale > 0 ? Math.max(0, 1 - finale / 0.8) : 1;
+          const after = finale < 0 ? Math.min(-finale / 0.6, 1) : 0;
+          o = Math.max(o, min + (peak - min) * approach - (peak - tail) * after);
+        }
+        if (scene.current) scene.current.style.opacity = String(o);
         if (glow.current) glow.current.style.transform = `translate3d(0, ${(-progress * 40).toFixed(2)}px, 0)`;
         if (grid.current) grid.current.style.transform = `translate3d(0, ${(-progress * 120).toFixed(2)}px, 0)`;
         const k = 0.12 + 0.88 * progress;

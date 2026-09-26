@@ -1,11 +1,15 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 /*
  * Люди на макете: стилизованные, но с человеческими пропорциями (рост ≈ 1.78 ед. = метров).
- * Скелет — иерархия групп: таз → поясница → грудь → шея → голова, ключицы → плечо → предплечье → кисть,
- * бедро → голень → стопа. Одежда и обувь — отдельная геометрия поверх «тела».
- * Геометрия и материалы общие для всех людей и создаются один раз; в покадровой анимации — ни одного new.
+ * Скелет — иерархия костей: таз → поясница → грудь → шея → голова, ключицы → плечо → предплечье → кисть,
+ * бедро → голень → стопа. Лицо, волосы, одежда и обувь — отдельные куски геометрии поверх «тела».
+ * Все куски одного человека сливаются в одну сетку со скинингом (каждая вершина жёстко привязана к своей кости),
+ * цвета — в вершинах: человек рисуется за 3 вызова (ткань, кожа, глянец) вместо ~50, и детали почти ничего не стоят.
+ * Каска — отдельной сеткой без тени, чтобы козырёк не клал тёмную полосу на лицо.
+ * Геометрия и материалы создаются один раз; в покадровой анимации — ни одного new.
  */
 
 // Размеры скелета, м
@@ -22,7 +26,104 @@ export const DIM = {
 };
 const LEG = DIM.thigh + DIM.shin;
 
-/* ─── Геометрия ──────────────────────────────────────────────── */
+/* ─── Голова: профиль и точки на коже ────────────────────────── */
+
+// Профиль черепа [радиус, высота] от макушки к подбородку; сечение — эллипс, глубина ×HEAD_DEPTH
+const HEAD: [number, number][] = [
+  [0.0001, 0.125],
+  [0.045, 0.12],
+  [0.068, 0.1],
+  [0.079, 0.06],
+  [0.08, 0.02],
+  [0.076, -0.025],
+  [0.068, -0.06],
+  [0.052, -0.09],
+  [0.03, -0.11],
+  [0.0001, -0.117],
+];
+const HEAD_DEPTH = 1.24;
+const TOP = 0.125;
+const CHIN = -0.117;
+const SKULL = { y: 0.115, z: 0.008 }; // центр черепа в координатах кости головы
+
+function headRadius(y: number) {
+  for (let i = 0; i < HEAD.length - 1; i++) {
+    const [r0, y0] = HEAD[i];
+    const [r1, y1] = HEAD[i + 1];
+    if (y <= y0 && y >= y1) return r0 + ((r1 - r0) * (y0 - y)) / (y0 - y1);
+  }
+  return 0.0001;
+}
+
+// Точка на коже: высота y от центра черепа, угол a от фаса (+ — к +x), отступ наружу out.
+// yaw — поворот, при котором деталь смотрит по нормали к лицу.
+function onHead(y: number, a: number, out = 0) {
+  const r = headRadius(y) + out;
+  return {
+    x: r * Math.sin(a),
+    y: SKULL.y + y,
+    z: SKULL.z + HEAD_DEPTH * r * Math.cos(a),
+    yaw: Math.atan2(HEAD_DEPTH * Math.sin(a), Math.cos(a)),
+  };
+}
+
+/*
+ * Поверхность по форме черепа — волосы и борода. Для каждого угла a — полоса от lower(a) до upper(a),
+ * «раздутая» от центра черепа на толщину thick (сверху волосы пышнее — так выходит само).
+ * dense — где сгущать ряды: у макушки (волосы) или у подбородка (борода), там кривизна больше.
+ */
+function scalp(
+  lower: (a: number) => number,
+  upper: (a: number) => number,
+  from: number,
+  to: number,
+  thick: (a: number, t: number) => number,
+  cols: number,
+  rows: number,
+  dense: "top" | "bottom",
+) {
+  const pos: number[] = [];
+  const idx: number[] = [];
+  for (let i = 0; i <= cols; i++) {
+    const a = from + ((to - from) * i) / cols;
+    const y0 = lower(a);
+    const y1 = upper(a);
+    for (let j = 0; j <= rows; j++) {
+      const t = j / rows;
+      const e = dense === "top" ? Math.sin((t * Math.PI) / 2) : 1 - Math.cos((t * Math.PI) / 2);
+      const y = y0 + (y1 - y0) * e;
+      const r = headRadius(y);
+      const s = 1 + thick(a, t) / 0.08;
+      pos.push(s * r * Math.sin(a), s * y, s * HEAD_DEPTH * r * Math.cos(a));
+    }
+  }
+  // Порядок вершин как у LatheGeometry с профилем снизу вверх — грани смотрят наружу
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++) {
+      const a = i * (rows + 1) + j;
+      const b = a + rows + 1;
+      idx.push(a, b, a + 1, b + 1, a + 1, b);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
+// Линия роста волос: надо лбом высоко, над ушами ниже, на затылке — до шеи; бакенбарды перед ухом
+function hairline(a: number) {
+  const c = Math.cos(a);
+  const y = c >= 0 ? 0.014 + 0.05 * Math.pow(c, 1.4) : 0.014 - 0.084 * Math.pow(-c, 0.9);
+  return y - 0.03 * Math.exp(-Math.pow((Math.abs(wrapAngle(a)) - 1.28) / 0.11, 2));
+}
+
+// Верхний край бороды: под губами низко, к щекам поднимается и сходится с бакенбардами
+const beardLine = (a: number) => -0.071 + 0.066 * THREE.MathUtils.smoothstep(Math.abs(a), 0.35, 1.3);
+
+/* ─── Геометрия тела ─────────────────────────────────────────── */
 
 // Сужающийся «сегмент тела» со скруглёнными торцами и лёгкой мышцей в верхней трети.
 // Висит от точки подвеса вниз (по −y) — так поворот сустава выглядит естественно.
@@ -51,31 +152,31 @@ function lathe(profile: [number, number][], depth: number, seg = 20) {
   return g;
 }
 
+const rbox = (w: number, h: number, d: number, r: number, seg = 2) => new RoundedBoxGeometry(w, h, d, seg, r);
+const ellipsoid = (r: number, sx: number, sy: number, sz: number, w = 12, h = 8) => new THREE.SphereGeometry(r, w, h).scale(sx, sy, sz);
+
+// Краска куска: цвет вершин и класс поверхности (0 — ткань и волосы, 1 — кожа, 2 — глянец)
+type Paint = { color: THREE.Color; kind: 0 | 1 | 2 };
+const paint = (hex: string, kind: Paint["kind"] = 0): Paint => ({ color: new THREE.Color(hex), kind });
+
 export function createHumanKit() {
   const geo = {
     // Голова — «яйцо» с сужением к подбородку, а не шар
-    head: lathe(
-      [
-        [0.0001, 0.125],
-        [0.045, 0.12],
-        [0.068, 0.1],
-        [0.079, 0.06],
-        [0.08, 0.02],
-        [0.076, -0.025],
-        [0.068, -0.06],
-        [0.052, -0.09],
-        [0.03, -0.11],
-        [0.0001, -0.117],
-      ],
-      1.24,
-      22,
-    ),
-    hair: new THREE.SphereGeometry(0.086, 22, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
-    nose: new THREE.ConeGeometry(0.014, 0.04, 8),
-    eye: new THREE.SphereGeometry(0.0085, 8, 6),
-    brow: new RoundedBoxGeometry(0.028, 0.006, 0.01, 1, 0.003),
-    ear: new THREE.SphereGeometry(0.024, 10, 8),
-    neck: limb(0.047, 0.046, 0.05, 0.1, 12),
+    head: lathe(HEAD, HEAD_DEPTH, 26),
+    hair: scalp(hairline, () => TOP, Math.PI, Math.PI * 3, (a, t) => 0.007 + 0.007 * Math.max(0, Math.cos(a)) * t, 40, 12, "top"),
+    buzz: scalp(hairline, () => TOP, Math.PI, Math.PI * 3, () => 0.0035, 32, 10, "top"),
+    beard: scalp(() => CHIN, beardLine, -1.5, 1.5, (_, t) => 0.0055 * (1 - 0.35 * t), 26, 8, "bottom"),
+    mustache: rbox(0.042, 0.009, 0.012, 0.0044, 1),
+    // Лицо: белок, радужка, линия ресниц, брови, нос, губы
+    sclera: ellipsoid(0.011, 1.1, 0.6, 0.55),
+    iris: ellipsoid(0.0068, 1, 1, 0.55, 10, 8),
+    lash: rbox(0.026, 0.0035, 0.007, 0.0017, 1),
+    brow: rbox(0.03, 0.0075, 0.01, 0.0036, 1),
+    nose: rbox(0.024, 0.048, 0.03, 0.011),
+    lips: rbox(0.036, 0.016, 0.014, 0.0065),
+    mouth: rbox(0.03, 0.0022, 0.003, 0.001, 1),
+    ear: ellipsoid(0.026, 0.6, 1.1, 0.32, 10, 8),
+    neck: limb(0.052, 0.051, 0.056, 0.1, 14),
     // Торс: таз, поясница, грудная клетка — три части, чтобы корпус мог скручиваться
     pelvis: lathe(
       [
@@ -109,9 +210,11 @@ export function createHumanKit() {
       ],
       0.6,
     ),
-    // Складки ткани: кромка футболки, воротник, гармошка брюк над обувью
+    // Складки ткани: кромка куртки, воротник, гармошка брюк над обувью; молния
     hem: new THREE.TorusGeometry(0.16, 0.009, 6, 28),
-    collar: new THREE.TorusGeometry(0.062, 0.012, 6, 20),
+    // Воротник плотный и чуть стоячий — закрывает основание шеи
+    collar: new THREE.TorusGeometry(0.066, 0.017, 8, 24),
+    zipper: rbox(0.007, 0.2, 0.004, 0.0015, 1),
     deltoid: new THREE.SphereGeometry(0.068, 14, 10),
     // Руки
     sleeveShort: limb(0.062, 0.058, 0.053, 0.13),
@@ -120,19 +223,28 @@ export function createHumanKit() {
     foreArm: limb(0.039, 0.038, 0.029, DIM.fore),
     foreSleeve: limb(0.046, 0.045, 0.038, DIM.fore * 0.78),
     cuff: new THREE.TorusGeometry(0.041, 0.008, 6, 16),
-    palm: limb(0.03, 0.034, 0.026, 0.11, 10),
+    gloveCuff: new THREE.TorusGeometry(0.036, 0.01, 6, 16),
+    // Кисть: ладонь, четыре пальца, большой палец
+    palm: limb(0.03, 0.034, 0.027, 0.07, 10),
+    finger: limb(0.0088, 0.0086, 0.0076, 0.04, 6),
     thumb: limb(0.012, 0.012, 0.01, 0.05, 8),
     // Ноги — это брюки: кожа не видна, отдельное «тело» не нужно
     thigh: limb(0.082, 0.078, 0.06, DIM.thigh),
     shin: limb(0.061, 0.058, 0.055, DIM.shin),
     fold: new THREE.TorusGeometry(0.057, 0.007, 6, 18),
-    // Кроссовки: верх, подошва, носок
-    shoe: new RoundedBoxGeometry(0.1, 0.075, 0.24, 3, 0.03),
-    sole: new RoundedBoxGeometry(0.108, 0.026, 0.27, 2, 0.01),
-    // Каска и светоотражающие полосы жилета
-    helmet: new THREE.SphereGeometry(0.096, 22, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-    brim: new THREE.CylinderGeometry(0.108, 0.112, 0.012, 28),
-    ridge: new RoundedBoxGeometry(0.022, 0.03, 0.2, 2, 0.008),
+    kneePad: rbox(0.085, 0.1, 0.03, 0.012),
+    // Обувь: верх, подошва, шнуровка кроссовок, голенище ботинок
+    shoe: rbox(0.1, 0.075, 0.24, 0.03, 3),
+    sole: rbox(0.108, 0.026, 0.27, 0.01),
+    laces: rbox(0.052, 0.01, 0.1, 0.004, 1),
+    bootCuff: new THREE.CylinderGeometry(0.058, 0.064, 0.07, 14),
+    // Пояс маляра: ремень, пряжка, сумка с инструментом, рулетка
+    belt: new THREE.TorusGeometry(0.163, 0.013, 6, 32),
+    buckle: rbox(0.036, 0.03, 0.01, 0.003, 1),
+    pouch: rbox(0.06, 0.12, 0.11, 0.015),
+    handle: new THREE.CylinderGeometry(0.011, 0.011, 0.16, 8),
+    tape: rbox(0.03, 0.065, 0.065, 0.01),
+    // Жилет: светоотражающие полосы, карманы
     vest: lathe(
       [
         [0.17, -0.12],
@@ -145,37 +257,61 @@ export function createHumanKit() {
       0.63,
     ),
     stripe: new THREE.TorusGeometry(0.182, 0.011, 4, 32),
+    pocket: rbox(0.07, 0.075, 0.014, 0.006),
+    // Каска: купол, козырёк, кромка, ребро жёсткости
+    helmet: new THREE.SphereGeometry(0.096, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+    peak: rbox(0.13, 0.012, 0.055, 0.005),
+    rim: new THREE.TorusGeometry(0.098, 0.006, 6, 32),
+    ridge: rbox(0.022, 0.03, 0.2, 0.008),
   };
   // Кроссовка: носок вперёд, пятка под голеностопом
   geo.shoe.translate(0, -0.02, 0.055);
   geo.sole.translate(0, -DIM.ankle + 0.013, 0.06);
-  geo.nose.rotateX(Math.PI / 2);
 
-  const fabric = (color: string, roughness = 0.92) =>
-    new THREE.MeshPhysicalMaterial({ color, roughness, sheen: 0.6, sheenRoughness: 0.8, sheenColor: new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.35) });
-  const mat = {
-    skinA: new THREE.MeshStandardMaterial({ color: "#c38a68", roughness: 0.58 }),
-    skinB: new THREE.MeshStandardMaterial({ color: "#a8704f", roughness: 0.6 }),
-    hair: new THREE.MeshStandardMaterial({ color: "#1f1712", roughness: 0.75 }),
-    eye: new THREE.MeshStandardMaterial({ color: "#14100d", roughness: 0.25 }),
-    jacket: fabric("#34465a"),
-    shirt: fabric("#e4e7ea"),
-    tee: fabric("#8b97a3"),
-    chino: fabric("#2a2f36"),
-    work: fabric("#233348"),
-    vest: fabric("#f5871f", 0.78),
-    reflect: new THREE.MeshStandardMaterial({ color: "#d9e0e6", roughness: 0.25, metalness: 0.7 }),
-    shoeWhite: new THREE.MeshStandardMaterial({ color: "#e9ebee", roughness: 0.6 }),
-    shoeDark: new THREE.MeshStandardMaterial({ color: "#3a312a", roughness: 0.7 }),
-    sole: new THREE.MeshStandardMaterial({ color: "#f4f4f2", roughness: 0.8 }),
-    helmet: new THREE.MeshStandardMaterial({ color: "#f5a01f", roughness: 0.32, metalness: 0.05 }),
+  const P = {
+    skinA: paint("#c38a68", 1),
+    skinB: paint("#a8704f", 1),
+    lipsA: paint("#a65d4b", 1),
+    lipsB: paint("#86493a", 1),
+    mouth: paint("#4a2622", 1),
+    hair: paint("#221811"),
+    beard: paint("#34261b"),
+    sclera: paint("#dcd5cb", 2),
+    iris: paint("#22150d", 2),
+    jacket: paint("#34465a"),
+    tee: paint("#8b97a3"),
+    chino: paint("#2a2f36"),
+    work: paint("#233348"),
+    vest: paint("#f5871f"),
+    vestPocket: paint("#dd7515"),
+    reflect: paint("#e3e8ec", 2),
+    zipper: paint("#a7b2bd", 2),
+    shoeWhite: paint("#e9ebee"),
+    shoeDark: paint("#3a312a"),
+    sole: paint("#f4f4f2"),
+    laces: paint("#c3c9d0"),
+    glove: paint("#56636f"),
+    belt: paint("#2a2018"),
+    metal: paint("#c9ced3", 2),
+    pouch: paint("#8a5a2b"),
+    wood: paint("#b98a5e"),
+    tape: paint("#f2c01e", 2),
+    pad: paint("#2b3036"),
   };
 
+  const std = (roughness: number, metalness = 0) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness, metalness });
+  const mats = [std(0.86), std(0.52), std(0.3, 0.15)];
+  const helmet = new THREE.MeshStandardMaterial({ color: "#f5a01f", roughness: 0.32, metalness: 0.05 });
+
+  // Слитые сетки людей — освобождаются вместе с набором
+  const owned: THREE.BufferGeometry[] = [];
   const dispose = () => {
     Object.values(geo).forEach((g) => g.dispose());
-    Object.values(mat).forEach((m) => m.dispose());
+    owned.forEach((g) => g.dispose());
+    mats.forEach((m) => m.dispose());
+    helmet.dispose();
   };
-  return { geo, mat, dispose };
+  return { geo, paint: P, mats, helmet, owned, dispose };
 }
 export type HumanKit = ReturnType<typeof createHumanKit>;
 
@@ -184,106 +320,182 @@ export type HumanKit = ReturnType<typeof createHumanKit>;
 export type Rig = ReturnType<typeof buildHuman>;
 
 type Look = {
-  skin: THREE.Material;
-  top: THREE.Material;
-  pants: THREE.Material;
-  shoe: THREE.Material;
+  skin: Paint;
+  lips: Paint;
+  top: Paint;
+  pants: Paint;
+  shoe: Paint;
   longSleeves: boolean;
-  worker?: boolean; // каска и жилет
+  worker?: boolean; // каска, жилет, перчатки, пояс с инструментом, борода
 };
 
+type PartData = { g: THREE.BufferGeometry; p: Paint | "helmet" };
+
+// Кусок геометрии → копия без лишних атрибутов, в координатах `space`, с цветом и привязкой к кости
+function bake(o: THREE.Object3D, space: THREE.Matrix4, color?: THREE.Color, bone = 0) {
+  const { g } = o.userData.part as PartData;
+  const c = g.index ? g.toNonIndexed() : g.clone();
+  for (const name of Object.keys(c.attributes)) if (name !== "position" && name !== "normal") c.deleteAttribute(name);
+  c.applyMatrix4(new THREE.Matrix4().multiplyMatrices(space, o.matrixWorld));
+  if (color) {
+    const n = c.attributes.position.count;
+    const col = new Float32Array(n * 3);
+    const si = new Uint16Array(n * 4);
+    const sw = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      col[i * 3] = color.r;
+      col[i * 3 + 1] = color.g;
+      col[i * 3 + 2] = color.b;
+      si[i * 4] = bone;
+      sw[i * 4] = 1;
+    }
+    c.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    c.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(si, 4));
+    c.setAttribute("skinWeight", new THREE.BufferAttribute(sw, 4));
+  }
+  return c;
+}
+
+function merge(list: THREE.BufferGeometry[], groups = false) {
+  const g = mergeGeometries(list, groups);
+  if (!g) throw new Error("humans: не удалось слить геометрию");
+  return g;
+}
+
 export function buildHuman(kit: HumanKit, look: Look) {
-  const { geo, mat } = kit;
-  const group = (parent: THREE.Object3D, x = 0, y = 0, z = 0) => {
-    const o = new THREE.Group();
+  const { geo, paint: P } = kit;
+  const hands = look.worker ? P.glove : look.skin;
+  // Сустав — кость скелета
+  const bone = (parent: THREE.Object3D, x = 0, y = 0, z = 0) => {
+    const b = new THREE.Bone();
+    b.position.set(x, y, z);
+    parent.add(b);
+    return b;
+  };
+  // Кусок поверхности: пока — пустой объект с геометрией и краской; в конце всё сливается в одну сетку
+  const part = (parent: THREE.Object3D, g: THREE.BufferGeometry, p: Paint | "helmet", x = 0, y = 0, z = 0) => {
+    const o = new THREE.Object3D();
     o.position.set(x, y, z);
+    o.userData.part = { g, p } satisfies PartData;
     parent.add(o);
     return o;
   };
-  const mesh = (parent: THREE.Object3D, g: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) => {
-    const o = new THREE.Mesh(g, m);
-    o.position.set(x, y, z);
-    o.castShadow = true;
-    o.receiveShadow = true;
-    parent.add(o);
+  // Деталь лица на коже головы
+  const face = (head: THREE.Object3D, g: THREE.BufferGeometry, p: Paint, y: number, a: number, out: number) => {
+    const s = onHead(y, a, out);
+    const o = part(head, g, p, s.x, s.y, s.z);
+    o.rotation.y = s.yaw;
     return o;
   };
 
   const root = new THREE.Group();
-  const pelvis = group(root, 0, DIM.pelvisY, 0);
-  mesh(pelvis, geo.pelvis, look.pants);
+  const pelvis = bone(root, 0, DIM.pelvisY, 0);
+  part(pelvis, geo.pelvis, look.pants);
+  if (look.worker) {
+    // Ремень под краем футболки, сумка с молотком на правом бедре, рулетка на левом
+    const belt = part(pelvis, geo.belt, P.belt, 0, 0.012, 0);
+    belt.rotation.x = Math.PI / 2;
+    belt.scale.set(1, 0.68, 1);
+    part(pelvis, geo.buckle, P.metal, 0, 0.012, 0.117);
+    part(pelvis, geo.pouch, P.pouch, -0.182, -0.035, 0.02).rotation.z = 0.05;
+    part(pelvis, geo.handle, P.wood, -0.19, 0.06, 0.035).rotation.z = 0.12;
+    part(pelvis, geo.tape, P.tape, 0.18, -0.005, 0.02);
+  }
 
   // Корпус
-  const spine = group(pelvis, 0, 0.07, 0);
-  const abdomen = mesh(spine, geo.abdomen, look.top);
-  const hem = mesh(spine, geo.hem, look.top, 0, -0.035, 0);
+  const spine = bone(pelvis, 0, 0.07, 0);
+  part(spine, geo.abdomen, look.top);
+  if (look.longSleeves) part(spine, geo.zipper, P.zipper, 0, 0.07, 0.105);
+  const hem = bone(spine, 0, -0.035, 0);
   hem.rotation.x = Math.PI / 2;
   hem.scale.set(1, 0.68, 1);
-  const chest = group(spine, 0, 0.19, 0);
-  const chestMesh = mesh(chest, geo.chest, look.top);
-  const collar = mesh(chest, geo.collar, look.top, 0, 0.265, 0.004);
+  part(hem, geo.hem, look.top);
+  const chest = bone(spine, 0, 0.19, 0);
+  // Грудь «дышит» отдельной костью — вместе с ней жилет, карманы и воротник
+  const chestSkin = bone(chest);
+  part(chestSkin, geo.chest, look.top);
+  const collar = part(chestSkin, geo.collar, look.top, 0, 0.27, 0.004);
   collar.rotation.x = Math.PI / 2 + 0.2;
-  let vest: THREE.Mesh | null = null;
+  collar.scale.set(1, 1, look.longSleeves ? 1.7 : 1.1);
+  if (look.longSleeves) part(chestSkin, geo.zipper, P.zipper, 0, 0.1, 0.109);
   if (look.worker) {
-    vest = mesh(chest, geo.vest, mat.vest, 0, 0, 0);
+    part(chestSkin, geo.vest, P.vest);
     [0.02, 0.13].forEach((y) => {
-      const s = mesh(chest, geo.stripe, mat.reflect, 0, y, 0);
+      const s = part(chestSkin, geo.stripe, P.reflect, 0, y, 0);
       s.rotation.x = Math.PI / 2;
       s.scale.set(1, 0.65, 1);
+    });
+    [-1, 1].forEach((s) => {
+      const p = part(chestSkin, geo.pocket, P.vestPocket, s * 0.078, -0.045, 0.1);
+      p.rotation.y = s * 0.3;
     });
   }
 
   // Шея и голова
-  const neck = group(chest, 0, 0.255, 0.005);
-  mesh(neck, geo.neck, look.skin).rotation.x = Math.PI; // сегмент растёт вверх от основания шеи
-  const head = group(neck, 0, 0.1, 0);
-  const skull = mesh(head, geo.head, look.skin, 0, 0.115, 0.008);
-  skull.castShadow = true;
-  mesh(head, geo.nose, look.skin, 0, 0.1, 0.098);
+  const neck = bone(chest, 0, 0.255, 0.005);
+  part(neck, geo.neck, look.skin).rotation.x = Math.PI; // сегмент растёт вверх от основания шеи
+  const head = bone(neck, 0, 0.1, 0);
+  part(head, geo.head, look.skin, 0, SKULL.y, SKULL.z);
+  part(head, look.worker ? geo.buzz : geo.hair, P.hair, 0, SKULL.y, SKULL.z);
   [-1, 1].forEach((s) => {
-    const e = mesh(head, geo.ear, look.skin, s * 0.078, 0.11, -0.005);
-    e.scale.set(0.35, 0.8, 0.55);
+    const a = s * 0.37;
+    face(head, geo.sclera, P.sclera, 0.012, a, -0.003);
+    face(head, geo.iris, P.iris, 0.011, a, 0.0015);
+    face(head, geo.lash, P.hair, 0.0195, a, 0.0005).rotation.z = -s * 0.12;
+    const brow = face(head, geo.brow, P.hair, 0.037, s * 0.36, 0.0015);
+    brow.rotation.z = -s * 0.1;
+    if (look.worker) brow.scale.set(1.05, 1.3, 1);
+    face(head, geo.ear, look.skin, -0.004, (s * Math.PI) / 2, -0.002);
   });
-  // Волосы: линия роста надо лбом, сзади — ниже, до затылка
-  const hair = mesh(head, geo.hair, mat.hair, 0, 0.148, 0.004);
-  hair.scale.set(1.09, 1.13, 1.32);
-  hair.rotation.x = -0.25;
-  // Глаза и брови — едва заметно, чтобы голова читалась как лицо, а не как манекен
-  [-1, 1].forEach((s) => {
-    mesh(head, geo.eye, mat.eye, s * 0.03, 0.128, 0.084).castShadow = false;
-    const brow = mesh(head, geo.brow, mat.hair, s * 0.031, 0.152, 0.087);
-    brow.castShadow = false;
-    brow.rotation.set(-0.25, 0, s * -0.08);
-  });
+  face(head, geo.nose, look.skin, -0.012, 0, -0.004).rotation.x = -0.3;
+  face(head, geo.lips, look.lips, -0.057, 0, -0.003);
+  face(head, geo.mouth, P.mouth, -0.057, 0, 0.0035);
   if (look.worker) {
-    const helmet = group(head, 0, 0.165, 0.004);
+    part(head, geo.beard, P.beard, 0, SKULL.y, SKULL.z);
+    face(head, geo.mustache, P.beard, -0.047, 0, 0.0005);
+    const helmet = new THREE.Group();
+    helmet.position.set(0, 0.165, 0.004);
     helmet.rotation.x = -0.08;
-    const dome = mesh(helmet, geo.helmet, mat.helmet);
-    dome.scale.set(1, 0.92, 1.18);
-    const brim = mesh(helmet, geo.brim, mat.helmet, 0, 0.004, 0.012);
-    brim.scale.set(1, 1, 1.22);
-    mesh(helmet, geo.ridge, mat.helmet, 0, 0.082, 0);
+    head.add(helmet);
+    part(helmet, geo.helmet, "helmet").scale.set(1, 0.92, 1.18);
+    const rim = part(helmet, geo.rim, "helmet", 0, 0.002, 0);
+    rim.rotation.x = Math.PI / 2;
+    rim.scale.set(1, 1.18, 1);
+    part(helmet, geo.peak, "helmet", 0, 0.004, 0.13).rotation.x = 0.12;
+    part(helmet, geo.ridge, "helmet", 0, 0.082, 0);
   }
 
   // Руки: ключица → плечо → предплечье → кисть
   const arm = (side: 1 | -1) => {
-    const clav = group(chest, side * 0.05, 0.215, -0.005);
-    const del = mesh(clav, geo.deltoid, look.top, side * 0.115, -0.012, 0);
+    const clav = bone(chest, side * 0.05, 0.215, -0.005);
+    const del = part(clav, geo.deltoid, look.top, side * 0.115, -0.012, 0);
     del.scale.set(0.95, 0.85, 0.9);
-    const upper = group(clav, side * DIM.shoulderX, 0, 0);
-    mesh(upper, geo.upperArm, look.skin);
-    mesh(upper, look.longSleeves ? geo.sleeveLong : geo.sleeveShort, look.top);
-    const fore = group(upper, 0, -DIM.upper, 0);
-    mesh(fore, geo.foreArm, look.skin);
+    const upper = bone(clav, side * DIM.shoulderX, 0, 0);
+    part(upper, geo.upperArm, look.skin);
+    part(upper, look.longSleeves ? geo.sleeveLong : geo.sleeveShort, look.top);
+    const fore = bone(upper, 0, -DIM.upper, 0);
+    part(fore, geo.foreArm, look.skin);
     if (look.longSleeves) {
-      mesh(fore, geo.foreSleeve, look.top);
-      const c = mesh(fore, geo.cuff, look.top, 0, -DIM.fore * 0.74, 0);
-      c.rotation.x = Math.PI / 2;
+      part(fore, geo.foreSleeve, look.top);
+      part(fore, geo.cuff, look.top, 0, -DIM.fore * 0.74, 0).rotation.x = Math.PI / 2;
     }
-    const hand = group(fore, 0, -DIM.fore - 0.005, 0);
-    const palm = mesh(hand, geo.palm, look.skin);
-    palm.scale.set(1.15, 1, 0.62);
-    const thumb = mesh(hand, geo.thumb, look.skin, -side * 0.024, -0.02, 0.018);
+    if (look.worker) part(fore, geo.gloveCuff, hands, 0, -DIM.fore + 0.012, 0).rotation.x = Math.PI / 2;
+    const hand = bone(fore, 0, -DIM.fore - 0.005, 0);
+    part(hand, geo.palm, hands).scale.set(1.15, 1, 0.62);
+    // Пальцы от указательного к мизинцу, чуть согнуты
+    (
+      [
+        [0.0225, 1.0],
+        [0.0075, 1.12],
+        [-0.0075, 1.06],
+        [-0.0225, 0.86],
+      ] as const
+    ).forEach(([x, len]) => {
+      const f = part(hand, geo.finger, hands, -side * x, -0.072, 0.003);
+      f.scale.set(1, len, 1);
+      f.rotation.x = 0.35;
+    });
+    const thumb = part(hand, geo.thumb, hands, -side * 0.026, -0.02, 0.018);
     thumb.rotation.set(0.5, 0, -side * 0.45);
     return { clav, upper, fore, hand };
   };
@@ -292,31 +504,81 @@ export function buildHuman(kit: HumanKit, look: Look) {
 
   // Ноги: бедро → голень → стопа
   const leg = (side: 1 | -1) => {
-    const thigh = group(pelvis, side * DIM.hipX, DIM.hipY, 0);
-    mesh(thigh, geo.thigh, look.pants);
-    const shin = group(thigh, 0, -DIM.thigh, 0);
-    mesh(shin, geo.shin, look.pants);
+    const thigh = bone(pelvis, side * DIM.hipX, DIM.hipY, 0);
+    part(thigh, geo.thigh, look.pants);
+    const shin = bone(thigh, 0, -DIM.thigh, 0);
+    part(shin, geo.shin, look.pants);
     [0.33, 0.37].forEach((k, i) => {
-      const f = mesh(shin, geo.fold, look.pants, 0, -DIM.shin + k * 0.1, 0.002);
+      const f = part(shin, geo.fold, look.pants, 0, -DIM.shin + k * 0.1, 0.002);
       f.rotation.x = Math.PI / 2 + (i ? 0.18 : -0.12);
     });
-    const foot = group(shin, 0, -DIM.shin, 0);
-    mesh(foot, geo.shoe, look.shoe);
-    mesh(foot, geo.sole, mat.sole);
+    if (look.worker) part(shin, geo.kneePad, P.pad, 0, -0.035, 0.058);
+    const foot = bone(shin, 0, -DIM.shin, 0);
+    part(foot, geo.shoe, look.shoe);
+    part(foot, geo.sole, P.sole);
+    if (look.worker) part(foot, geo.bootCuff, look.shoe, 0, 0.03, 0);
+    else part(foot, geo.laces, P.laces, 0, 0.018, 0.07);
     return { thigh, shin, foot };
   };
   const LL = leg(1);
   const RL = leg(-1);
 
+  /* Сборка: куски → одна сетка со скинингом (+ каска отдельно) */
+  root.updateMatrixWorld(true);
+  const bones: THREE.Bone[] = [];
+  const parts: THREE.Object3D[] = [];
+  root.traverse((o) => {
+    if ((o as THREE.Bone).isBone) bones.push(o as THREE.Bone);
+    if (o.userData.part) parts.push(o);
+  });
+  const byKind: THREE.BufferGeometry[][] = [[], [], []];
+  const helmetParts: THREE.BufferGeometry[] = [];
+  const I = new THREE.Matrix4();
+  const headInv = head.matrixWorld.clone().invert();
+  for (const o of parts) {
+    const { p } = o.userData.part as PartData;
+    if (p === "helmet") helmetParts.push(bake(o, headInv));
+    else {
+      let b = o.parent;
+      while (b && !(b as THREE.Bone).isBone) b = b.parent;
+      byKind[p.kind].push(bake(o, I, p.color, bones.indexOf(b as THREE.Bone)));
+    }
+    o.removeFromParent();
+  }
+  const kinds = ([0, 1, 2] as const).filter((k) => byKind[k].length);
+  const perKind = kinds.map((k) => merge(byKind[k]));
+  const body = merge(perKind, true);
+  [...byKind.flat(), ...perKind].forEach((g) => g.dispose());
+  kit.owned.push(body);
+
+  const mesh = new THREE.SkinnedMesh(
+    body,
+    kinds.map((k) => kit.mats[k]),
+  );
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false; // поза уводит вершины за рамки позы привязки
+  root.add(mesh);
+  mesh.updateMatrixWorld(true);
+  mesh.bind(new THREE.Skeleton(bones));
+
+  if (helmetParts.length) {
+    const g = merge(helmetParts);
+    helmetParts.forEach((h) => h.dispose());
+    kit.owned.push(g);
+    const helmet = new THREE.Mesh(g, kit.helmet);
+    helmet.receiveShadow = true;
+    head.add(helmet);
+  }
+
   return {
     root,
+    mesh,
     pelvis,
     spine,
     chest,
-    chestMesh,
-    abdomen,
+    chestSkin,
     hem,
-    vest,
     neck,
     head,
     armL: L,
@@ -400,8 +662,7 @@ function footFlat(foot: THREE.Object3D, root: THREE.Object3D, pitch = 0) {
 // Дыхание: грудь чуть расширяется, плечи приподнимаются
 function breathe(r: Rig, t: number, rate: number, depth: number) {
   const b = Math.sin(t * rate);
-  r.chestMesh.scale.set(1 + 0.008 * b * depth, 1 + 0.01 * b * depth, 1 + 0.018 * b * depth);
-  if (r.vest) r.vest.scale.copy(r.chestMesh.scale);
+  r.chestSkin.scale.set(1 + 0.008 * b * depth, 1 + 0.01 * b * depth, 1 + 0.018 * b * depth);
   r.armL.clav.position.y = 0.215 + 0.004 * b * depth;
   r.armR.clav.position.y = 0.215 + 0.004 * b * depth;
 }

@@ -135,16 +135,17 @@ body {
     white-space: nowrap;
   }
 
-  /* Панели: сталь и бетон, без стекла. Размытие только у навигации, под которой едет контент */
+  /* Панели полупрозрачные — сквозь них видно макет на фоне. Размытия нет: оно дорогое
+     поверх WebGL, а текст и так читается. Размытие только у навигации */
   .panel {
     position: relative;
-    background: rgb(11 22 34 / 0.94);
+    background: rgb(11 22 34 / 0.8);
     border: 1px solid var(--line);
     box-shadow: 0 24px 50px -30px rgb(0 0 0 / 0.8);
   }
   .panel-strong {
     position: relative;
-    background: linear-gradient(180deg, #0e1c2b, #0a1520);
+    background: linear-gradient(180deg, rgb(14 28 43 / 0.84), rgb(10 21 32 / 0.84));
     border: 1px solid var(--line-strong);
     box-shadow: 0 30px 70px -35px rgb(0 0 0 / 0.9);
   }

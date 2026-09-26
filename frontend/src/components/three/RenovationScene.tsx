@@ -6,10 +6,11 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { backgroundModel } from "@/lib/site";
 import { buildHuman, createHumanKit, poseWalk, poseWork, strideLength, wobble, type WorkState } from "./humans";
 import { getScroll, subscribeScroll } from "./scroll";
-import { blobTexture, concreteTexture, edgeTexture } from "./textures";
+import { blobTexture, concreteTexture, edgeTexture, screenTexture } from "./textures";
 
 /*
  * Макет коммерческого помещения в разрезе — «до» и «после» ремонта, с живыми людьми.
@@ -30,10 +31,11 @@ const H = 2.6; // высота стен
 function createMaterials(hq: boolean) {
   const concrete = concreteTexture(7, hq ? 512 : 256);
   const plasterTex = concreteTexture(23, hq ? 512 : 256);
+  const screenTex = screenTexture();
   const std = (color: string, roughness = 0.7, metalness = 0, map?: THREE.Texture) =>
     new THREE.MeshStandardMaterial({ color, roughness, metalness, map: map ?? null, roughnessMap: map ?? null });
   return {
-    textures: [concrete, plasterTex],
+    textures: [concrete, plasterTex, screenTex],
     // Бетон и штукатурка — с фактурой; шероховатость «гуляет» по той же карте
     slab: std("#39434d", 0.9, 0, concrete),
     screed: std("#9aa2aa", 0.95, 0, concrete),
@@ -52,9 +54,14 @@ function createMaterials(hq: boolean) {
     blueBox: std("#2f73ad", 0.6),
     paintBlue: std("#3b8fd6", 0.4),
     nap: std("#e9ecef", 1),
+    // Белые, чтобы цвет каждой коробки/листа задавался в экземпляре (instanceColor)
+    goods: std("#ffffff", 0.55),
+    leaf: std("#ffffff", 0.72),
+    soil: std("#2b221b", 1),
+    screen: new THREE.MeshStandardMaterial({ map: screenTex, emissiveMap: screenTex, emissive: "#ffffff", emissiveIntensity: 0.85, roughness: 0.25 }),
     // Стекло из двух слоёв: лёгкая голубая тонировка + отражение окружения, которое складывается со светом.
     // Так стекло прозрачное, но с живыми бликами — без дорогого прохода transmission.
-    glass: new THREE.MeshPhysicalMaterial({
+    glass: new THREE.MeshStandardMaterial({
       color: "#bfe2f7",
       roughness: 0.05,
       metalness: 0,
@@ -183,44 +190,163 @@ function walkwayStruts(step: number) {
   return out;
 }
 
-function Struts({ matrices, material, cast = true, geometry = box }: { matrices: THREE.Matrix4[]; material: THREE.Material; cast?: boolean; geometry?: THREE.BufferGeometry }) {
+// Много одинаковых предметов — один вызов отрисовки; colors — цвет каждого экземпляра
+function Struts({
+  matrices,
+  material,
+  cast = true,
+  geometry = box,
+  colors,
+}: {
+  matrices: THREE.Matrix4[];
+  material: THREE.Material;
+  cast?: boolean;
+  geometry?: THREE.BufferGeometry;
+  colors?: string[];
+}) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     const mesh = ref.current;
     if (!mesh) return;
-    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    const c = new THREE.Color();
+    matrices.forEach((m, i) => {
+      mesh.setMatrixAt(i, m);
+      if (colors) mesh.setColorAt(i, c.set(colors[i]));
+    });
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [matrices]);
+  }, [matrices, colors]);
   return <instancedMesh ref={ref} args={[geometry, material, matrices.length]} castShadow={cast} receiveShadow />;
 }
+
+// Статичные куски одного материала — в одну геометрию: один вызов отрисовки вместо десятка
+type V3 = readonly [number, number, number];
+type Part = { g: THREE.BufferGeometry; p: V3; r?: V3; s?: V3 };
+const PM = new THREE.Matrix4();
+const PE = new THREE.Euler();
+const PQ = new THREE.Quaternion();
+const PV = new THREE.Vector3();
+const PS = new THREE.Vector3();
+function mergeParts(parts: Part[]) {
+  const list = parts.map(({ g, p, r = [0, 0, 0], s = [1, 1, 1] }) => {
+    const c = g.index ? g.toNonIndexed() : g.clone();
+    for (const name of Object.keys(c.attributes)) if (name !== "position" && name !== "normal" && name !== "uv") c.deleteAttribute(name);
+    c.applyMatrix4(PM.compose(PV.set(p[0], p[1], p[2]), PQ.setFromEuler(PE.set(r[0], r[1], r[2])), PS.set(s[0], s[1], s[2])));
+    return c;
+  });
+  const out = mergeGeometries(list);
+  list.forEach((g) => g.dispose());
+  if (!out) throw new Error("scene: не удалось слить геометрию");
+  return out;
+}
+
+const place = (p: V3, s: V3, r: V3 = [0, 0, 0], order: THREE.EulerOrder = "XYZ") =>
+  new THREE.Matrix4().compose(new THREE.Vector3(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(r[0], r[1], r[2], order)), new THREE.Vector3(...s));
+
+/* ─── Товар на стеллаже и растение: экземпляры с цветом ─────── */
+
+const UNIT_BOX = new RoundedBoxGeometry(1, 1, 1, 2, 0.06);
+const UNIT_CAN = new THREE.CylinderGeometry(1, 1, 1, 18);
+const UNIT_SPOOL = new THREE.TorusGeometry(1, 0.42, 8, 20);
+const UNIT_STEM = new THREE.CylinderGeometry(1, 1, 1, 6);
+// Лист: сплюснутый эллипсоид, черешок в начале координат, лист вдоль +x
+const LEAF = new THREE.SphereGeometry(1, 12, 6).scale(0.1, 0.008, 0.042).translate(0.1, 0, 0);
+
+// Полки на высотах 0.3 / 0.8 / 1.3 / 1.8, верх полки на +0.015
+const BOXES: [V3, V3, string][] = [
+  [[0.2, 0.415, 0], [0.26, 0.2, 0.22], "#f5871f"],
+  [[0.43, 0.385, 0.02], [0.14, 0.14, 0.18], "#e9edf1"],
+  [[-0.32, 0.905, 0], [0.24, 0.18, 0.22], "#2f73ad"],
+  [[0.38, 0.925, 0], [0.2, 0.22, 0.2], "#e9edf1"],
+  [[0.38, 1.085, 0], [0.16, 0.1, 0.16], "#f5871f"],
+  [[-0.36, 1.415, 0], [0.2, 0.2, 0.2], "#e9edf1"],
+  [[-0.12, 1.395, 0], [0.2, 0.16, 0.22], "#2f73ad"],
+  [[-0.3, 1.945, 0], [0.12, 0.26, 0.2], "#2f73ad"],
+  [[-0.14, 1.945, 0], [0.12, 0.26, 0.2], "#e9edf1"],
+  [[0.02, 1.945, 0], [0.12, 0.26, 0.2], "#f5871f"],
+  [[0.3, 1.905, 0], [0.24, 0.18, 0.2], "#e9edf1"],
+];
+const CANS: [V3, string][] = [
+  [[-0.4, 0.385, 0], "#dfe5ea"],
+  [[-0.24, 0.385, 0.01], "#2f73ad"],
+  [[-0.08, 0.385, -0.01], "#dfe5ea"],
+  [[0.16, 1.385, 0], "#dfe5ea"],
+  [[0.32, 1.385, 0.01], "#f5871f"],
+];
+const SPOOLS: [V3, string][] = [
+  [[-0.06, 0.922, 0], "#f5871f"],
+  [[0.15, 0.922, 0], "#3b8fd6"],
+];
+const GOODS = {
+  boxes: BOXES.map(([p, s]) => place(p, s)),
+  boxColors: BOXES.map(([, , c]) => c),
+  cans: CANS.map(([p]) => place(p, [0.065, 0.14, 0.065])),
+  canColors: CANS.map(([, c]) => c),
+  spools: SPOOLS.map(([p]) => place(p, [0.075, 0.075, 0.075])),
+  spoolColors: SPOOLS.map(([, c]) => c),
+};
+
+// Фикус: несколько стеблей из горшка, листья по спирали — внизу поникшие, наверху смотрят вверх
+const PLANT = (() => {
+  const stems: [V3, V3][] = [
+    [[0.02, 0.33, 0.01], [-0.06, 0.98, 0.04]],
+    [[-0.03, 0.33, -0.02], [0.13, 0.84, -0.06]],
+    [[0.03, 0.33, 0.03], [0.06, 0.7, 0.15]],
+    [[0, 0.33, 0], [-0.15, 0.76, -0.09]],
+  ];
+  const tones = ["#3f8f5a", "#2f6e45", "#4fa36b"];
+  const stemM: THREE.Matrix4[] = [];
+  const leaves: THREE.Matrix4[] = [];
+  const colors: string[] = [];
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  stems.forEach(([from, to], si) => {
+    a.set(...from);
+    b.set(...to);
+    stemM.push(strut(a, b, 0.009));
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const t = 0.3 + (0.7 * i) / (n - 1);
+      const p = new THREE.Vector3().lerpVectors(a, b, t);
+      const k = 0.7 + 0.45 * Math.sin(Math.PI * Math.min(1, t * 1.1));
+      leaves.push(place([p.x, p.y, p.z], [k, k, k], [0.25 * Math.sin(i * 1.7 + si), i * 2.4 + si * 1.3, -0.35 + 0.95 * t], "YZX"));
+      colors.push(tones[(i + si) % 3]);
+    }
+  });
+  return { stems: stemM, leaves, colors };
+})();
 
 function Walkway({ mats, hq }: { mats: Mats; hq: boolean }) {
   const grid = useMemo(() => walkwayStruts(hq ? 0.05 : 0.1), [hq]);
   const len = WALK.x1 - WALK.x0;
   const xc = (WALK.x0 + WALK.x1) / 2;
-  const posts = [WALK.x0 + 0.04, WALK.x0 + len / 3, WALK.x0 + (2 * len) / 3, WALK.x1 - 0.04];
+  const zc = (WALK.z0 + WALK.z1) / 2;
+  // Обвязка настила, стойки перил, нижняя перекладина и ступень — одна геометрия
+  const frame = useMemo(() => {
+    const posts = [WALK.x0 + 0.04, WALK.x0 + len / 3, WALK.x0 + (2 * len) / 3, WALK.x1 - 0.04];
+    const rail = new THREE.CylinderGeometry(0.012, 0.012, len, 12);
+    const g = mergeParts([
+      { g: rb(len, 0.12, 0.04, 0.008), p: [xc, DECK - 0.06, WALK.z0 + 0.02] },
+      { g: rb(len, 0.12, 0.04, 0.008), p: [xc, DECK - 0.06, WALK.z1 - 0.02] },
+      { g: rb(0.04, 0.12, WALK.z1 - WALK.z0, 0.008), p: [WALK.x0 + 0.02, DECK - 0.06, zc] },
+      { g: rb(0.04, 0.12, WALK.z1 - WALK.z0, 0.008), p: [WALK.x1 - 0.02, DECK - 0.06, zc] },
+      ...posts.map((x) => ({ g: rb(0.035, 0.95, 0.035, 0.008), p: [x, DECK + 0.475, WALK.z1 - 0.03] as const })),
+      { g: rail, p: [xc, DECK + 0.5, WALK.z1 - 0.03], r: [0, 0, Math.PI / 2] },
+      { g: rb(0.3, 0.08, 0.5, 0.01), p: [WALK.x0 - 0.15, 0.04, zc] },
+    ]);
+    rail.dispose();
+    return g;
+  }, [len, xc, zc]);
+  useEffect(() => () => frame.dispose(), [frame]);
   return (
     <group>
-      {/* Обвязка настила */}
-      {[WALK.z0 + 0.02, WALK.z1 - 0.02].map((z) => (
-        <mesh key={z} geometry={rb(len, 0.12, 0.04, 0.008)} material={mats.steelDark} position={[xc, DECK - 0.06, z]} castShadow receiveShadow />
-      ))}
-      {[WALK.x0 + 0.02, WALK.x1 - 0.02].map((x) => (
-        <mesh key={x} geometry={rb(0.04, 0.12, WALK.z1 - WALK.z0, 0.008)} material={mats.steelDark} position={[x, DECK - 0.06, (WALK.z0 + WALK.z1) / 2]} castShadow />
-      ))}
+      <mesh geometry={frame} material={mats.steelDark} castShadow receiveShadow />
       <Struts matrices={grid} material={mats.steel} />
-      {/* Перила со стороны зрителя — передний план, дают глубину */}
-      {posts.map((x) => (
-        <mesh key={x} geometry={rb(0.035, 0.95, 0.035, 0.008)} material={mats.steelDark} position={[x, DECK + 0.475, WALK.z1 - 0.03]} castShadow />
-      ))}
-      {[0.95, 0.5].map((y, i) => (
-        <mesh key={y} position={[xc, DECK + y, WALK.z1 - 0.03]} rotation={[0, 0, Math.PI / 2]} material={i ? mats.steelDark : mats.orange} castShadow>
-          <cylinderGeometry args={[i ? 0.012 : 0.02, i ? 0.012 : 0.02, len, 12]} />
-        </mesh>
-      ))}
-      {/* Ступень */}
-      <mesh geometry={rb(0.3, 0.08, 0.5, 0.01)} material={mats.steelDark} position={[WALK.x0 - 0.15, 0.04, (WALK.z0 + WALK.z1) / 2]} castShadow receiveShadow />
+      {/* Поручень со стороны зрителя — передний план, даёт глубину */}
+      <mesh position={[xc, DECK + 0.95, WALK.z1 - 0.03]} rotation={[0, 0, Math.PI / 2]} material={mats.orange} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, len, 12]} />
+      </mesh>
     </group>
   );
 }
@@ -282,16 +408,70 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
       new THREE.MeshBasicMaterial({ color: "#05090f", alphaMap: map, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
     return { edge, blob, ao: shade(edge, 0.42), aoWall: shade(edge, 0.3), contact: shade(blob, 0.5) };
   }, []);
+  // Статичные части, слитые по материалам: меньше вызовов отрисовки — плавнее прокрутка
+  const statics = useMemo(() => {
+    const cup = new THREE.CylinderGeometry(0.035, 0.03, 0.09, 16);
+    const plate = rb(0.08, 0.08, 0.016, 0.006);
+    const out = {
+      // Верх стены, рама витрины, трасса и ручка щита
+      frame: mergeParts([
+        { g: rb(4.34, 0.05, 0.18, 0.012), p: [0, H + 0.02, -2.08] },
+        { g: rb(0.14, 0.14, 4.16, 0.02), p: [-2.06, 0.07, 0.08] },
+        { g: rb(0.14, 0.2, 4.16, 0.02), p: [-2.06, H - 0.1, 0.08] },
+        ...[-2.02, -0.69, 0.64, 1.97].map((z) => ({ g: rb(0.1, H, 0.1, 0.015), p: [-2.06, H / 2, 0.08 + z] as const })),
+        { g: rb(0.05, 0.86, 0.05, 0.01), p: [1.55, 2.1, -1.94] },
+        { g: rb(0.022, 0.12, 0.022, 0.006), p: [1.74, 1.35, -1.878] },
+      ]),
+      // Чистовая отделка: плинтус, розетки, выключатель
+      finish: mergeParts([
+        { g: box, p: [0.08, 0.045, -1.985], s: [4.1, 0.09, 0.02] },
+        { g: plate, p: [-0.55, 0.32, -1.982] },
+        { g: plate, p: [-0.46, 0.32, -1.982] },
+        { g: plate, p: [1.8, 0.32, -1.982] },
+        { g: rb(0.08, 0.12, 0.016, 0.006), p: [-0.62, 1.1, -1.982] },
+      ]),
+      // Корпус светильника с подвесами
+      lamp: mergeParts([
+        { g: rb(1.4, 0.06, 0.11, 0.015), p: [0, 0, 0] },
+        { g: box, p: [-0.55, 0.4, 0], s: [0.01, 0.8, 0.01] },
+        { g: box, p: [0.55, 0.4, 0], s: [0.01, 0.8, 0.01] },
+      ]),
+      // Ручка стеклянной двери
+      handle: mergeParts([
+        { g: rb(0.022, 0.75, 0.022, 0.006), p: [0.048, 1.0, 0.42] },
+        { g: rb(0.034, 0.018, 0.018, 0.004), p: [0.03, 1.3, 0.42] },
+        { g: rb(0.034, 0.018, 0.018, 0.004), p: [0.03, 0.7, 0.42] },
+      ]),
+      // Стойка: столешница, клавиатура, терминал, чашка; монитор кассы
+      counterTop: mergeParts([
+        { g: rb(1.9, 0.05, 0.64, 0.015), p: [0, 0.925, 0] },
+        { g: rb(0.3, 0.018, 0.1, 0.004), p: [0.3, 0.959, 0.14], r: [0, 0.4, 0] },
+        { g: rb(0.08, 0.02, 0.14, 0.006), p: [0.78, 0.96, 0.16], r: [0, -0.2, 0] },
+        { g: cup, p: [-0.58, 0.995, 0.12] },
+      ]),
+      monitor: mergeParts([
+        { g: rb(0.18, 0.012, 0.12, 0.004), p: [0.35, 0.956, -0.1], r: [0, 0.4, 0] },
+        { g: rb(0.035, 0.2, 0.03, 0.008), p: [0.35, 1.05, -0.12], r: [0, 0.4, 0] },
+        { g: rb(0.44, 0.28, 0.03, 0.01), p: [0.35, 1.2, -0.12], r: [-0.1, 0.4, 0] },
+      ]),
+      shelfPosts: mergeParts([-0.52, 0.52].map((x) => ({ g: rb(0.04, 2, 0.04, 0.008), p: [x, 1, 0] as const }))),
+      shelfBoards: mergeParts([0.3, 0.8, 1.3, 1.8].map((y) => ({ g: rb(1.08, 0.03, 0.32, 0.008), p: [0, y, 0] as const }))),
+      stack: mergeParts([0, 1, 2, 3, 4].map((i) => ({ g: rb(0.48, 0.03, 0.48, 0.006), p: [0, 0.02 + i * 0.035, 0] as const }))),
+    };
+    cup.dispose();
+    return out;
+  }, []);
 
   useEffect(
     () => () => {
       Object.values(mats).forEach((m) => (Array.isArray(m) ? m.forEach((t) => t.dispose()) : m.dispose()));
       Object.values(overlays).forEach((o) => o.dispose());
+      Object.values(statics).forEach((g) => g.dispose());
       logoFacets.dispose();
       RB.forEach((g) => g.dispose());
       RB.clear();
     },
-    [mats, overlays, logoFacets],
+    [mats, overlays, statics, logoFacets],
   );
 
   const progress = useRef<Progress>({ k: START });
@@ -377,8 +557,13 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
     const breathe = 1 + 0.015 * Math.sin(t * 0.6) * Math.sin(t * 1.7);
     const lampMesh = P("lampDiffuser") as THREE.Mesh | undefined;
     if (lampMesh) (lampMesh.material as THREE.MeshStandardMaterial).emissiveIntensity = (0.05 + on * 2.4) * breathe;
+    // Конусы света аддитивные и во весь кадр — пока свет выключен, не рисуем их вовсе
     const coneMesh = P("coneA") as THREE.Mesh | undefined;
     if (coneMesh) (coneMesh.material as THREE.MeshBasicMaterial).opacity = on * 0.05 * breathe;
+    ["coneA", "coneB"].forEach((n) => {
+      if (P(n)) P(n).visible = on > 0.001;
+    });
+    show("finish", easeOut(seg(k, 0.6, 0.7)));
     if (hemi.current) hemi.current.intensity = 0.55 + on * 0.35;
     if (lampLight.current) lampLight.current.intensity = on * 1.1 * breathe;
 
@@ -435,20 +620,18 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
 
         {/* Задняя стена: штукатурка + слой краски, который растёт слева направо */}
         <mesh geometry={box} material={mats.plaster} position={[0, H / 2, -2.08]} scale={[4.32, H, 0.16]} receiveShadow castShadow />
-        <mesh geometry={rb(4.34, 0.05, 0.18, 0.012)} material={mats.steelDark} position={[0, H + 0.02, -2.08]} castShadow />
+        <mesh geometry={statics.frame} material={mats.steelDark} castShadow receiveShadow />
+        <mesh ref={ref("finish")} geometry={statics.finish} material={mats.white} receiveShadow />
         <mesh ref={ref("paint")} geometry={box} material={mats.paint} position={[0, H / 2, -1.995]} scale={[0.001, H, 0.01]} receiveShadow />
 
         {/* Витрина слева: каркас, стёкла ставятся по ходу ремонта */}
         <group position={[-2.06, 0, 0.08]}>
-          <mesh geometry={rb(0.14, 0.14, 4.16, 0.02)} material={mats.steelDark} position={[0, 0.07, 0]} castShadow receiveShadow />
-          <mesh geometry={rb(0.14, 0.2, 4.16, 0.02)} material={mats.steelDark} position={[0, H - 0.1, 0]} castShadow />
-          {[-2.02, -0.69, 0.64, 1.97].map((z) => (
-            <mesh key={z} geometry={rb(0.1, H, 0.1, 0.015)} material={mats.steelDark} position={[0, H / 2, z]} castShadow />
-          ))}
           {[-1.355, -0.025, 1.305].map((z, i) => (
             <group key={z} ref={ref(`glass${i}`)} position={[0, 0.14, z]}>
               <mesh geometry={box} material={mats.glass} position={[0, (H - 0.34) / 2, 0]} scale={[0.03, H - 0.34, 1.23]} />
               <mesh geometry={box} material={mats.glassReflect} position={[0.017, (H - 0.34) / 2, 0]} scale={[0.002, H - 0.34, 1.23]} />
+              {/* Средняя секция — дверь с ручкой */}
+              {i === 1 && <mesh geometry={statics.handle} material={mats.steel} castShadow />}
             </group>
           ))}
         </group>
@@ -457,7 +640,6 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
         <group position={[1.55, 0, -1.94]}>
           <mesh geometry={rb(0.46, 0.64, 0.1, 0.02)} material={mats.white} position={[0, 1.35, 0]} castShadow />
           <mesh geometry={box} material={mats.orange} position={[0, 1.58, 0.055]} scale={[0.46, 0.06, 0.01]} />
-          <mesh geometry={rb(0.05, 0.86, 0.05, 0.01)} material={mats.steelDark} position={[0, 2.1, 0]} />
         </group>
         <mesh ref={ref("coil")} position={[1.72, 0.05, -0.95]} rotation={[Math.PI / 2, 0, 0]} material={mats.orange} castShadow>
           <torusGeometry args={[0.2, 0.045, 12, 32]} />
@@ -480,12 +662,9 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
           { name: "lampB", pos: [0.4, 2.2, 0.55] as const },
         ].map((l, i) => (
           <group key={l.name} ref={ref(l.name)} position={l.pos}>
-            <mesh geometry={rb(1.4, 0.06, 0.11, 0.015)} material={mats.steelDark} castShadow />
+            <mesh geometry={statics.lamp} material={mats.steelDark} castShadow />
             <mesh ref={i === 0 ? ref("lampDiffuser") : undefined} geometry={box} material={mats.lamp} position={[0, -0.035, 0]} scale={[1.34, 0.012, 0.08]} />
-            {[-0.55, 0.55].map((x) => (
-              <mesh key={x} geometry={box} material={mats.steelDark} position={[x, 0.4, 0]} scale={[0.01, 0.8, 0.01]} />
-            ))}
-            <mesh ref={i === 0 ? ref("coneA") : undefined} material={mats.cone} position={[0, -1.1, 0]} scale={[1.7, 1, 0.9]}>
+            <mesh ref={ref(i === 0 ? "coneA" : "coneB")} material={mats.cone} position={[0, -1.1, 0]} scale={[1.7, 1, 0.9]} visible={false}>
               <coneGeometry args={[0.75, 2.1, 24, 1, true]} />
             </mesh>
           </group>
@@ -503,45 +682,36 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
         </group>
         <group ref={ref("counter")} position={[0.4, 0, -0.85]}>
           <mesh geometry={rb(1.8, 0.9, 0.55, 0.02)} material={mats.wood} position={[0, 0.45, 0]} castShadow receiveShadow />
-          <mesh geometry={rb(1.9, 0.05, 0.64, 0.015)} material={mats.white} position={[0, 0.925, 0]} castShadow />
+          <mesh geometry={statics.counterTop} material={mats.white} castShadow receiveShadow />
           <mesh geometry={box} material={mats.accent} position={[0, 0.62, 0.28]} scale={[1.8, 0.1, 0.01]} />
+          <mesh geometry={statics.monitor} material={mats.steelDark} castShadow />
+          {/* Экран кассы смотрит на посетителя и чуть в сторону камеры */}
+          <mesh material={mats.screen} position={[0.356, 1.2014, -0.1058]} rotation={[-0.1, 0.4, 0]}>
+            <planeGeometry args={[0.4, 0.25]} />
+          </mesh>
         </group>
 
         {/* Стеллаж с товаром — поставка материалов */}
         <group ref={ref("shelving")} position={[-1.3, 0, -1.72]}>
-          {[-0.52, 0.52].map((x) => (
-            <mesh key={x} geometry={rb(0.04, 2, 0.04, 0.008)} material={mats.steelDark} position={[x, 1, 0]} castShadow />
-          ))}
-          {[0.3, 0.8, 1.3, 1.8].map((y) => (
-            <mesh key={y} geometry={rb(1.08, 0.03, 0.32, 0.008)} material={mats.white} position={[0, y, 0]} castShadow receiveShadow />
-          ))}
+          <mesh geometry={statics.shelfPosts} material={mats.steelDark} castShadow />
+          <mesh geometry={statics.shelfBoards} material={mats.white} castShadow receiveShadow />
         </group>
+        {/* Товар: коробки, банки краски, катушки кабеля — поставка материалов */}
         <group ref={ref("goods")} position={[-1.3, 0, -1.72]}>
-          {(
-            [
-              [-0.3, 0.42, "orange"],
-              [0.05, 0.4, "blueBox"],
-              [0.32, 0.43, "white"],
-              [-0.2, 0.92, "blueBox"],
-              [0.25, 0.9, "orange"],
-              [-0.28, 1.41, "white"],
-              [0.12, 1.42, "blueBox"],
-            ] as const
-          ).map(([x, y, mat], i) => (
-            <mesh key={i} geometry={rb(0.26, 0.2 + (i % 3) * 0.04, 0.22, 0.01)} material={mats[mat]} position={[x, y, 0]} castShadow />
-          ))}
+          <Struts matrices={GOODS.boxes} colors={GOODS.boxColors} geometry={UNIT_BOX} material={mats.goods} />
+          <Struts matrices={GOODS.cans} colors={GOODS.canColors} geometry={UNIT_CAN} material={mats.goods} />
+          <Struts matrices={GOODS.spools} colors={GOODS.spoolColors} geometry={UNIT_SPOOL} material={mats.goods} />
         </group>
 
         <group ref={ref("plant")} position={[-1.6, 0, 1.2]}>
-          <mesh material={mats.steelDark} position={[0, 0.17, 0]} castShadow>
+          <mesh material={mats.steelDark} position={[0, 0.17, 0]} castShadow receiveShadow>
             <cylinderGeometry args={[0.17, 0.13, 0.34, 24]} />
           </mesh>
-          <mesh material={mats.green} position={[0, 0.66, 0]} castShadow>
-            <icosahedronGeometry args={[0.33, 2]} />
+          <mesh material={mats.soil} position={[0, 0.335, 0]}>
+            <cylinderGeometry args={[0.155, 0.155, 0.01, 20]} />
           </mesh>
-          <mesh material={mats.greenDark} position={[0.14, 0.92, 0.05]} castShadow>
-            <icosahedronGeometry args={[0.2, 2]} />
-          </mesh>
+          <Struts matrices={PLANT.stems} geometry={UNIT_STEM} material={mats.greenDark} />
+          <Struts matrices={PLANT.leaves} colors={PLANT.colors} geometry={LEAF} material={mats.leaf} />
         </group>
 
         {/* Инвентарь ремонта: стремянка, ящик, стопка плитки */}
@@ -553,9 +723,7 @@ function Room({ reduced, hq }: { reduced: boolean; hq: boolean }) {
           <mesh geometry={rb(0.3, 0.04, 0.04, 0.01)} material={mats.steelDark} position={[0, 0.3, 0]} />
         </group>
         <group ref={ref("stack")} position={[0.2, 0, 0.85]}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <mesh key={i} geometry={rb(0.48, 0.03, 0.48, 0.006)} material={mats.tile} position={[0, 0.02 + i * 0.035, 0]} castShadow />
-          ))}
+          <mesh geometry={statics.stack} material={mats.tile} castShadow />
         </group>
 
         <Walkway mats={mats} hq={hq} />
@@ -577,52 +745,37 @@ function buildRoller(mats: Mats) {
   const spin = new THREE.Group();
   group.add(spin);
   const napGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.23, 24);
-  const rod = new THREE.CylinderGeometry(1, 1, 1, 8);
   const nap = new THREE.Mesh(napGeo, mats.nap);
   nap.rotation.z = Math.PI / 2;
   nap.castShadow = true;
   spin.add(nap);
   const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-  const pts = [v(0.13, 0, 0), v(0.13, -0.1, 0.1), v(0.02, -0.15, 0.16), v(-0.02, -0.26, 0.28)];
-  const tmp = new THREE.Vector3();
-  const add = (a: THREE.Vector3, b: THREE.Vector3, r: number, m: THREE.Material) => {
-    const mesh = new THREE.Mesh(rod, m);
-    strut(a, b, 1).decompose(mesh.position, mesh.quaternion, tmp);
-    mesh.scale.set(r, tmp.y, r);
-    mesh.castShadow = true;
-    group.add(mesh);
-  };
-  add(v(-0.12, 0, 0), pts[0], 0.005, mats.steel);
-  add(pts[0], pts[1], 0.005, mats.steel);
-  add(pts[1], pts[2], 0.005, mats.steel);
-  add(pts[2], pts[3], 0.017, mats.orange);
+  const pts = [v(-0.12, 0, 0), v(0.13, 0, 0), v(0.13, -0.1, 0.1), v(0.02, -0.15, 0.16), v(-0.02, -0.26, 0.28)];
+  const rod = (a: THREE.Vector3, b: THREE.Vector3, r: number) => new THREE.CylinderGeometry(r, r, 1, 8).applyMatrix4(strut(a, b, 1));
+  const rods = [rod(pts[0], pts[1], 0.005), rod(pts[1], pts[2], 0.005), rod(pts[2], pts[3], 0.005)];
+  const frameGeo = mergeGeometries(rods)!;
+  rods.forEach((g) => g.dispose());
+  const handleGeo = rod(pts[3], pts[4], 0.017);
+  const frame = new THREE.Mesh(frameGeo, mats.steel);
+  const handle = new THREE.Mesh(handleGeo, mats.orange);
+  frame.castShadow = handle.castShadow = true;
+  group.add(frame, handle);
   return {
     group,
     spin,
     dispose: () => {
       napGeo.dispose();
-      rod.dispose();
+      frameGeo.dispose();
+      handleGeo.dispose();
     },
   };
 }
 
 function buildCast(mats: Mats) {
   const kit = createHumanKit();
-  const walker = buildHuman(kit, {
-    skin: kit.mat.skinA,
-    top: kit.mat.jacket,
-    pants: kit.mat.chino,
-    shoe: kit.mat.shoeWhite,
-    longSleeves: true,
-  });
-  const worker = buildHuman(kit, {
-    skin: kit.mat.skinB,
-    top: kit.mat.tee,
-    pants: kit.mat.work,
-    shoe: kit.mat.shoeDark,
-    longSleeves: false,
-    worker: true,
-  });
+  const P = kit.paint;
+  const walker = buildHuman(kit, { skin: P.skinA, lips: P.lipsA, top: P.jacket, pants: P.chino, shoe: P.shoeWhite, longSleeves: true });
+  const worker = buildHuman(kit, { skin: P.skinB, lips: P.lipsB, top: P.tee, pants: P.work, shoe: P.shoeDark, longSleeves: false, worker: true });
   const roller = buildRoller(mats);
   return {
     walker,
@@ -834,7 +987,20 @@ function Environment() {
 // Ключевой тёплый свет с мягкими тенями, холодный контровой по контуру людей и металла, заполняющий
 function Lights({ hq, reduced }: { hq: boolean; reduced: boolean }) {
   const key = useRef<THREE.DirectionalLight>(null);
+  const get = useThree((s) => s.get);
+  const frame = useRef(0);
+  // Карта теней — второй проход по всей сцене. Двигаются в ней люди и появляющаяся мебель, и 30 обновлений
+  // в секунду на глаз не отличить от 60, поэтому пересчитываем её через кадр (и при прокрутке тоже).
+  useEffect(() => {
+    const { gl } = get();
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+    return () => {
+      gl.shadowMap.autoUpdate = true;
+    };
+  }, [get]);
   useFrame((state) => {
+    if (frame.current++ % 2 === 0) state.gl.shadowMap.needsUpdate = true;
     if (reduced || !key.current) return;
     const t = state.clock.elapsedTime;
     key.current.intensity = 2.3 * (1 + 0.012 * Math.sin(t * 0.37) * Math.sin(t * 0.91));
@@ -1033,7 +1199,7 @@ export default function RenovationScene() {
   }, []);
 
   const hq = !mobile;
-  const maxDpr = mobile ? 1.25 : 1.75;
+  const maxDpr = mobile ? 1.25 : 1.5;
   const room = <Room reduced={reduced} hq={hq} />;
 
   return (

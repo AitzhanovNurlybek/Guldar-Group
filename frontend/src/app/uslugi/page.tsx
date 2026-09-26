@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/Container";
 import { WhatsAppIcon } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
+import { PriceCalculator } from "@/components/PriceCalculator";
 import { Reveal } from "@/components/Reveal";
 import { ServiceCard } from "@/components/ServiceCard";
 import { serviceGroups, waLink } from "@/lib/site";
@@ -20,6 +21,19 @@ export default function ServicesPage() {
         lead="Цены — ориентир. Точную сумму зафиксируем в договоре после выезда."
       />
       <Container className="space-y-16 pb-8">
+        <Reveal>
+          <div className="panel-strong overflow-hidden rounded-3xl">
+            <div className="hazard h-1.5" aria-hidden />
+            <div className="p-6 sm:p-10">
+              <h2 className="title">Калькулятор</h2>
+              <p className="mt-3 text-lg text-fg-2">Вилка цен за пару кликов.</p>
+              <div className="mt-8">
+                <PriceCalculator />
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
         {serviceGroups.map((g) => (
           <section key={g.title}>
             <Reveal className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-4">

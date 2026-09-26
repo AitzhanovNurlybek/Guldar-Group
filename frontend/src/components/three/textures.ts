@@ -75,6 +75,30 @@ export function blobTexture(size = 128) {
   return new THREE.CanvasTexture(c);
 }
 
+// Экран кассы на стойке: шапка в фирменном цвете, строки чека, итог — читается как интерфейс, а не как чёрный прямоугольник
+export function screenTexture() {
+  const [c, g] = canvas(128);
+  c.height = 80;
+  g.fillStyle = "#0c1824";
+  g.fillRect(0, 0, 128, 80);
+  g.fillStyle = "#2f7fc0";
+  g.fillRect(0, 0, 128, 14);
+  g.fillStyle = "#f5871f";
+  g.fillRect(6, 4, 22, 6);
+  g.fillStyle = "#9fb3c6";
+  for (let i = 0; i < 4; i++) {
+    g.fillRect(8, 22 + i * 10, 52 - i * 7, 4);
+    g.fillRect(96, 22 + i * 10, 22, 4);
+  }
+  g.fillStyle = "#e9f2fa";
+  g.fillRect(8, 66, 34, 6);
+  g.fillStyle = "#f5871f";
+  g.fillRect(84, 63, 36, 12);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Затенение у стыка: плотно у края (v = 0), к середине сходит на нет
 export function edgeTexture(size = 128) {
   const [c, g] = canvas(size);

@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ClientLogos } from "@/components/ClientLogos";
 import { Container, SectionHead } from "@/components/Container";
 import { Icon, WhatsAppIcon, type IconName } from "@/components/Icons";
 import { Reveal } from "@/components/Reveal";
+import { PriceCalculator } from "@/components/PriceCalculator";
 import { IconTile, ServiceCard } from "@/components/ServiceCard";
 import { WhatsAppBuilder } from "@/components/WhatsAppBuilder";
-import { clients, featuredServices, productGroups, projects, services, site, steps, waGreeting, waLink } from "@/lib/site";
+import { featuredServices, productGroups, projects, services, site, steps, waGreeting, waLink } from "@/lib/site";
 
 const perks = ["Договор и гарантия", "Материалы от нас", `${services.length} видов работ`];
 
@@ -44,14 +46,15 @@ export default function Home() {
                 <WhatsAppIcon />
                 Обсудить в WhatsApp
               </a>
-              <Link href="/uslugi" className="btn btn-ghost">
-                Цены
-                <Icon name="arrow" className="size-4" />
-              </Link>
+              <a href="#kalkulyator" className="btn btn-ghost">
+                Рассчитать цену
+                <Icon name="arrow" className="size-4 rotate-90" />
+              </a>
             </div>
-            <p className="mt-10 text-sm text-fg-3">
-              Работали с: <span className="font-semibold text-fg-2">{clients.join(" · ")}</span>
-            </p>
+            <div className="mt-10">
+              <p className="mb-3 text-sm text-fg-3">Работали с:</p>
+              <ClientLogos />
+            </div>
             <p className="mt-10 hidden items-center gap-2 text-sm font-semibold text-fg-3 lg:flex">
               <Icon name="arrow" className="size-4 rotate-90 text-safety" />
               Листайте — ремонт идёт
@@ -77,6 +80,23 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+        </Container>
+      </section>
+
+      {/* ── Калькулятор ── */}
+      <section id="kalkulyator" className="scroll-mt-24 pb-16 sm:pb-24">
+        <Container>
+          <Reveal>
+            <div className="panel-strong overflow-hidden rounded-3xl">
+              <div className="hazard h-1.5" aria-hidden />
+              <div className="p-6 sm:p-10">
+                <SectionHead eyebrow="Калькулятор" title="Сколько стоит ремонт" lead="Выберите работы и площадь — покажем вилку цен." />
+                <div className="mt-8">
+                  <PriceCalculator />
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </Container>
       </section>
 
@@ -191,6 +211,21 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+        </Container>
+      </section>
+
+      {/* ── Результат: на этом блоке ремонт в макете заканчивается, макет виден полностью ── */}
+      <section data-scene-finale className="relative">
+        <Container className="flex min-h-[80svh] items-end pb-10 lg:min-h-[92dvh] lg:items-center lg:pb-0">
+          <Reveal className="max-w-sm">
+            <p className="eyebrow">Результат</p>
+            <h2 className="title mt-3">Ремонт закончен — можно открываться</h2>
+            <p className="mt-3 text-lg text-fg-2">Свет, плитка, витрина и вывеска — по одному договору.</p>
+            <a href="#obsudit" className="btn btn-accent mt-7">
+              Хочу так же
+              <Icon name="arrow" className="size-4 rotate-90" />
+            </a>
+          </Reveal>
         </Container>
       </section>
 

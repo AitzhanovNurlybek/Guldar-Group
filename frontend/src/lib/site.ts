@@ -168,7 +168,16 @@ export const productGroups: { title: string; text: string; icon: IconName }[] = 
 ];
 
 // satu.kz → «Основные клиенты». TODO: подтвердить, что названия можно показывать на сайте
-export const clients = ["Sulpak", "Kcell", "Evrika", "Jusan Mobile", "ТД «Пассаж»"];
+// Логотипы лежат в public/clients/ (SVG/PNG/WebP на прозрачном фоне). Нет файла — показывается название.
+// TODO: evrika.webp взят из Википедии как «Eureka logo» — сверить с логотипом сети Evrika;
+// jusan.webp — логотип Jusan Bank, а клиент — Jusan Mobile. Лучше заменить на SVG от заказчика.
+export const clients: { name: string; logo: string }[] = [
+  { name: "Sulpak", logo: "/clients/sulpak.webp" },
+  { name: "Kcell", logo: "/clients/kcell.webp" },
+  { name: "Evrika", logo: "/clients/evrika.webp" },
+  { name: "Jusan Mobile", logo: "/clients/jusan.webp" },
+  { name: "ТД «Пассаж»", logo: "/clients/passazh.svg" },
+];
 
 export const steps: { title: string; icon: IconName }[] = [
   { title: "Пишете в WhatsApp", icon: "phone" },
@@ -184,13 +193,51 @@ export const advantages = [
   { title: "Материалы от нас", text: "Сами поставляем электротехнику и стройматериалы — не ждём поставщиков." },
 ];
 
+// Калькулятор стоимости. Ставки «от», в тенге.
+// source: "satu" — цена «от» с guldargroup.satu.kz (на 2026-09);
+// source: "estimate" — ориентир для калькулятора. TODO: подтвердить у заказчика до публикации сайта
+export type CalcWork = {
+  id: string;
+  label: string;
+  unit: "m2" | "task";
+  rate: number;
+  source: "satu" | "estimate";
+  engineeringIncluded?: boolean; // электрика и сантехника уже входят в цену
+  noExtras?: boolean; // доп. работы к этому виду не применяются
+};
+
+export const calculator = {
+  works: [
+    { id: "cosmetic", label: "Косметический ремонт", unit: "m2", rate: 18000, source: "estimate" },
+    { id: "finish", label: "Отделочные работы", unit: "m2", rate: 30000, source: "satu" },
+    { id: "capital", label: "Капитальный ремонт", unit: "m2", rate: 45000, source: "estimate" },
+    { id: "turnkey", label: "Ремонт под ключ", unit: "m2", rate: 60000, source: "estimate", engineeringIncluded: true },
+    { id: "metal", label: "Здание из металлоконструкций", unit: "m2", rate: 120000, source: "satu", noExtras: true },
+    { id: "small", label: "Мелкий ремонт", unit: "task", rate: 10000, source: "satu", noExtras: true },
+  ] satisfies CalcWork[] as CalcWork[],
+  // Коэффициент сложности объекта. TODO: подтвердить у заказчика
+  objects: [
+    { id: "office", label: "Офис", k: 1 },
+    { id: "shop", label: "Магазин", k: 1.05 },
+    { id: "cafe", label: "Кафе или ресторан", k: 1.2 },
+    { id: "warehouse", label: "Склад", k: 0.85 },
+  ],
+  extras: {
+    electric: 8000, // ₸/м², estimate. TODO
+    demolition: 4000, // ₸/м², estimate. TODO
+    plumbingPoint: 30000, // ₸ за точку — satu.kz: «Сантехнические услуги от 30 000 ₸»
+  },
+  urgent: 0.15, // наценка за срочность, estimate. TODO
+  spread: 1.35, // верхняя граница вилки: «от» × spread, estimate. TODO
+};
+
 // Фото объектов: положите файлы в public/photos/ и перечислите здесь.
 // Пока список пуст — блок «Объекты» на сайте скрыт.
 export const projects: { title: string; place: string; image: string }[] = [
   // { title: "Ремонт торгового зала", place: "ТРЦ, Алматы", image: "/photos/01.jpg" },
 ];
 
-// 3D на фоне сайта — макет помещения «до и после ремонта», рисуется кодом и крутится при прокрутке.
+// 3D на фоне сайта — макет помещения «до и после ремонта», рисуется кодом, камера облетает его при прокрутке.
 // Чтобы заменить своей моделью — положите .glb в public/models/ и укажите путь, например "/models/building.glb".
 // Размер подгоняется автоматически; битый или отсутствующий файл — останется макет.
 export const backgroundModel: string | null = null;
