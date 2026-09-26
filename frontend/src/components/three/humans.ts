@@ -245,9 +245,9 @@ export function buildHuman(kit: HumanKit, look: Look) {
     e.scale.set(0.35, 0.8, 0.55);
   });
   // Волосы: линия роста надо лбом, сзади — ниже, до затылка
-  const hair = mesh(head, geo.hair, mat.hair, 0, 0.148, -0.012);
-  hair.scale.set(1.08, 1.13, 1.22);
-  hair.rotation.x = -0.38;
+  const hair = mesh(head, geo.hair, mat.hair, 0, 0.148, 0.004);
+  hair.scale.set(1.09, 1.13, 1.32);
+  hair.rotation.x = -0.25;
   // Глаза и брови — едва заметно, чтобы голова читалась как лицо, а не как манекен
   [-1, 1].forEach((s) => {
     mesh(head, geo.eye, mat.eye, s * 0.03, 0.128, 0.084).castShadow = false;
