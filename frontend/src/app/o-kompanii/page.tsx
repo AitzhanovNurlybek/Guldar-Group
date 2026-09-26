@@ -25,7 +25,7 @@ export default function AboutPage() {
       />
       <Container className="space-y-20 pb-8">
         <Reveal>
-          <div className="panel rounded-3xl p-6 sm:p-10">
+          <div className="panel-glass rounded-3xl p-6 sm:p-10">
             <p className="eyebrow">Среди клиентов</p>
             <ul className="mt-5 flex flex-wrap gap-x-10 gap-y-4 text-3xl font-medium sm:text-4xl">
               {clients.map((c) => (
