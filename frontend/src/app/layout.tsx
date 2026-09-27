@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Sidebar, WhatsAppFab } from "@/components/Sidebar";
-import { SceneBackground } from "@/components/three/SceneBackground";
+import { SceneBackground } from "@/components/scene/SceneBackground";
 import { site } from "@/lib/site";
 import "./globals.css";
 

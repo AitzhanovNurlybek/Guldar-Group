@@ -236,8 +236,3 @@ export const calculator = {
 export const projects: { title: string; place: string; image: string }[] = [
   // { title: "Ремонт торгового зала", place: "ТРЦ, Алматы", image: "/photos/01.jpg" },
 ];
-
-// 3D на фоне сайта — макет помещения «до и после ремонта», рисуется кодом, камера облетает его при прокрутке.
-// Чтобы заменить своей моделью — положите .glb в public/models/ и укажите путь, например "/models/building.glb".
-// Размер подгоняется автоматически; битый или отсутствующий файл — останется макет.
-export const backgroundModel: string | null = null;

@@ -291,7 +291,7 @@ body {
 }
 @media (min-width: 1024px) {
   .scene-layer {
-    mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.35) 14%, #000 34%);
+    mask-image: linear-gradient(to right, transparent 0%, rgb(0 0 0 / 0.55) 9%, #000 22%);
   }
 }
 
