@@ -18,6 +18,8 @@ export const site = {
   bin: "150240026941",
   gis: "https://2gis.kz/almaty/firm/70000001056080086",
   satu: "https://guldargroup.satu.kz",
+  // TODO: домен ещё не куплен — как купите, замените на настоящий (без / в конце)
+  url: "https://guldargroup.kz",
 };
 
 export function waLink(text: string) {
@@ -204,24 +206,25 @@ export type CalcWork = {
   source: "satu" | "estimate";
   engineeringIncluded?: boolean; // электрика и сантехника уже входят в цену
   noExtras?: boolean; // доп. работы к этому виду не применяются
+  forObject?: boolean; // ремонт под тип объекта — показывается во второй группе
 };
 
 export const calculator = {
   works: [
-    { id: "cosmetic", label: "Косметический ремонт", unit: "m2", rate: 18000, source: "estimate" },
+    { id: "cosmetic", label: "Косметический ремонт", unit: "m2", rate: 35000, source: "satu" },
     { id: "finish", label: "Отделочные работы", unit: "m2", rate: 30000, source: "satu" },
-    { id: "capital", label: "Капитальный ремонт", unit: "m2", rate: 45000, source: "estimate" },
+    { id: "capital", label: "Капитальный ремонт", unit: "m2", rate: 50000, source: "satu" },
     { id: "turnkey", label: "Ремонт под ключ", unit: "m2", rate: 60000, source: "estimate", engineeringIncluded: true },
-    { id: "metal", label: "Здание из металлоконструкций", unit: "m2", rate: 120000, source: "satu", noExtras: true },
+    { id: "metal", label: "Здание из металлоконструкций", unit: "m2", rate: 120000, source: "estimate", noExtras: true }, // на satu.kz такой позиции не нашли (2026-09-30)
     { id: "small", label: "Мелкий ремонт", unit: "task", rate: 10000, source: "satu", noExtras: true },
+    // Ремонт под тип объекта — отдельные услуги satu.kz (на 2026-09-30)
+    { id: "shop", label: "Магазин", unit: "m2", rate: 35000, source: "satu", forObject: true },
+    { id: "hotel", label: "Гостиница", unit: "m2", rate: 40000, source: "satu", forObject: true },
+    { id: "cafe", label: "Кафе или ресторан", unit: "m2", rate: 60000, source: "satu", forObject: true },
+    { id: "retail", label: "Торговое помещение", unit: "m2", rate: 50000, source: "satu", forObject: true },
+    { id: "office", label: "Офис", unit: "m2", rate: 35000, source: "satu", forObject: true },
+    { id: "warehouse", label: "Склад", unit: "m2", rate: 30000, source: "satu", forObject: true },
   ] satisfies CalcWork[] as CalcWork[],
-  // Коэффициент сложности объекта. TODO: подтвердить у заказчика
-  objects: [
-    { id: "office", label: "Офис", k: 1 },
-    { id: "shop", label: "Магазин", k: 1.05 },
-    { id: "cafe", label: "Кафе или ресторан", k: 1.2 },
-    { id: "warehouse", label: "Склад", k: 0.85 },
-  ],
   extras: {
     electric: 8000, // ₸/м², estimate. TODO
     demolition: 4000, // ₸/м², estimate. TODO

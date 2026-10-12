@@ -1,21 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Manrope, Montserrat } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Sidebar, WhatsAppFab } from "@/components/Sidebar";
 import { SceneBackground } from "@/components/scene/SceneBackground";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-// Современный гротеск с кириллицей — и для текста, и для заголовков
+// Manrope — основной текст; Montserrat — уверенный строительный шрифт для заголовков, цифр и кнопок
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin", "cyrillic"],
+  weight: ["600", "700", "800"],
+});
+
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "cyrillic"],
 });
 
+const description =
+  "Ремонт под ключ, электромонтаж, сантехника и техническое обслуживание офисов, магазинов и складов в Алматы. Договор и гарантия. С 2015 года.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: { default: `${site.name} — ${site.tagline.toLowerCase()}`, template: `%s — ${site.name}` },
-  description:
-    "Ремонт под ключ, электромонтаж, сантехника и техническое обслуживание офисов, магазинов и складов в Алматы. Договор и гарантия. С 2015 года.",
+  description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: site.name,
+    title: `${site.name} — ${site.tagline.toLowerCase()}`,
+    description,
+  },
 };
 
 export const viewport: Viewport = {
@@ -46,7 +63,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${manrope.variable} antialiased`}>
+    <html lang="ru" className={`${manrope.variable} ${montserrat.variable} antialiased`}>
       <body className="min-h-dvh font-sans">
         <script
           type="application/ld+json"

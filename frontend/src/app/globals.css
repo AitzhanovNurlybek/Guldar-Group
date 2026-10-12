@@ -49,7 +49,7 @@
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-display: var(--font-manrope), system-ui, sans-serif;
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
 }
 
 html {
@@ -99,15 +99,23 @@ body {
   background: rgb(245 135 31 / 0.35);
 }
 
+@layer base {
+  h1, h2, h3, h4, .tabular-nums {
+    font-family: var(--font-display);
+  }
+}
+
 @layer components {
   /* Типографика: крупно и плотно в заголовках, трекинг сжимается с ростом кегля */
   .display {
+    font-family: var(--font-display);
     font-size: clamp(2.5rem, 3.4vw + 0.9rem, 4.6rem);
     line-height: 1.04;
     letter-spacing: -0.035em;
     font-weight: 800;
   }
   .title {
+    font-family: var(--font-display);
     font-size: clamp(1.8rem, 2vw + 1rem, 2.8rem);
     line-height: 1.1;
     letter-spacing: -0.03em;
@@ -184,6 +192,7 @@ body {
 
   /* Кнопки: прямоугольные, с мгновенным откликом на нажатие */
   .btn {
+    font-family: var(--font-display);
     display: inline-flex;
     align-items: center;
     justify-content: center;

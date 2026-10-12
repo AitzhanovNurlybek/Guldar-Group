@@ -25,7 +25,7 @@ export function Footer() {
                 ))}
               </ul>
               <div className="space-y-2.5 text-sm text-fg-2">
-                <a href={`tel:+${site.whatsapp}`} className="block text-xl font-extrabold tracking-[-0.02em] text-fg hover:text-safety">
+                <a href={`tel:+${site.whatsapp}`} className="block font-display text-xl font-extrabold tracking-[-0.02em] text-fg hover:text-safety">
                   {site.phone}
                 </a>
                 <a href={`mailto:${site.email}`} className="block hover:text-fg">

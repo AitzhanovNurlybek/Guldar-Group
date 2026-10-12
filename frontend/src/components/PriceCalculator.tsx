@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Icon, WhatsAppIcon } from "./Icons";
 import { calculator, waLink } from "@/lib/site";
 
-const { works, objects, extras, urgent, spread } = calculator;
+const { works, extras, urgent, spread } = calculator;
+const generalWorks = works.filter((w) => !w.forObject);
+const objectWorks = works.filter((w) => w.forObject);
 
 // Округляем до тысячи: точность до тенге в ориентире только сбивает с толку
 const money = (n: number) => `${(Math.max(0, Math.round(n / 1000)) * 1000).toLocaleString("ru-RU")} ₸`;
@@ -112,8 +114,7 @@ function Stepper({ value, onChange, min, max, suffix }: { value: number; onChang
 }
 
 export function PriceCalculator() {
-  const [workId, setWorkId] = useState(works[3].id); // «под ключ» — самый частый запрос
-  const [objectId, setObjectId] = useState(objects[0].id);
+  const [workId, setWorkId] = useState("turnkey"); // «под ключ» — самый частый запрос
   const [area, setArea] = useState(80);
   const [tasks, setTasks] = useState(3);
   const [electric, setElectric] = useState(false);
@@ -122,15 +123,13 @@ export function PriceCalculator() {
   const [rush, setRush] = useState(false);
 
   const work = works.find((w) => w.id === workId)!;
-  const object = objects.find((o) => o.id === objectId)!;
   const perArea = work.unit === "m2";
   const extrasAllowed = perArea && !work.noExtras;
-  const k = perArea && work.id !== "metal" ? object.k : 1;
 
   // Строки расчёта: из них же собирается сообщение в WhatsApp
   const lines: { label: string; sum: number }[] = [];
   //   — неразрывный пробел: число и единица не разъезжаются по строкам
-  if (perArea) lines.push({ label: `${work.label}, ${area} м²`, sum: work.rate * area * k });
+  if (perArea) lines.push({ label: `${work.forObject ? "Ремонт: " + work.label.toLowerCase() : work.label}, ${area} м²`, sum: work.rate * area });
   else lines.push({ label: `${work.label}, ${tasks} ${tasks === 1 ? "задача" : tasks < 5 ? "задачи" : "задач"}`, sum: work.rate * tasks });
   if (extrasAllowed && !work.engineeringIncluded && electric) lines.push({ label: "Электромонтаж", sum: extras.electric * area });
   if (extrasAllowed && demolition) lines.push({ label: "Демонтаж", sum: extras.demolition * area });
@@ -145,7 +144,6 @@ export function PriceCalculator() {
   const message = [
     "Здравствуйте! Посчитал ремонт на сайте GulDar Group:",
     ...lines.map((l) => `• ${l.label}`),
-    perArea && work.id !== "metal" ? `• Объект: ${object.label.toLowerCase()}` : null,
     rush ? "• Нужно срочно" : null,
     `Ориентир: ${money(low)} – ${money(high)}. Можно обсудить точную смету?`,
   ]
@@ -156,9 +154,8 @@ export function PriceCalculator() {
     <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
       {/* min-w-0: иначе самый широкий неразрывный элемент растягивает колонку шире экрана телефона */}
       <div className="min-w-0 space-y-6">
-        <Chips label="Что нужно сделать" options={works} value={workId} onChange={setWorkId} />
-
-        {perArea && work.id !== "metal" && <Chips label="Какой объект" options={objects} value={objectId} onChange={setObjectId} />}
+        <Chips label="Что нужно сделать" options={generalWorks} value={workId} onChange={setWorkId} />
+        <Chips label="Или ремонт под ваш объект" options={objectWorks} value={workId} onChange={setWorkId} />
 
         {perArea ? (
           <div>

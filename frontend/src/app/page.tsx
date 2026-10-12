@@ -133,7 +133,7 @@ export default function Home() {
                   </div>
                   <Icon name="arrow" className="size-7 rotate-90 text-safety" />
                   <div className="rounded-2xl border-2 border-safety bg-safety/10 px-10 py-5 text-center">
-                    <p className="text-5xl font-extrabold tracking-[-0.04em] text-safety">1</p>
+                    <p className="font-display text-5xl font-extrabold tracking-[-0.04em] text-safety">1</p>
                     <p className="mt-1 font-bold">договор</p>
                   </div>
                 </div>
