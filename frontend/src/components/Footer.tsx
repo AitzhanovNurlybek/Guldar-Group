@@ -5,7 +5,7 @@ import { Logo } from "./Logo";
 
 export function Footer() {
   return (
-    <footer className="pt-10 pb-24 lg:pb-6">
+    <footer className="site-footer pb-24 lg:pb-6">
       <Container>
         <div className="panel overflow-hidden rounded-3xl">
           <div className="hazard h-1.5" aria-hidden />

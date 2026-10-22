@@ -1,78 +1,131 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { SceneFrames } from "./SceneFrames";
-import { subscribeScroll } from "./scroll";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { SceneAsset } from "./SceneAsset";
+import { getScroll, subscribeFrame, subscribeLayout } from "./scroll";
+import { SCENE_STAGES as STAGES } from "./animation-config";
+import { sceneMotion, selectSceneProgress, startSceneMotion, subscribeScene, subscribeStage } from "./motion-state";
+import { useQuality } from "./quality";
+import Image from "next/image";
 
-// Этапы ремонта — те же пороги, что в сюжете рендера (render/scene.py), по прогрессу прокрутки
-const STAGES: [number, string][] = [
-  [0, "Стены: штукатурка и покраска"],
-  [0.3, "Полы"],
-  [0.48, "Электрика и свет"],
-  [0.62, "Витрина и мебель"],
-  [0.92, "Объект сдан"],
-];
-const stageAt = (p: number) => STAGES.reduce((i, [from], j) => (p >= from ? j : i), 0);
+const SceneContext = createContext({ stage: 0 });
+const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
-/*
- * Фон сайта в три слоя с разной скоростью параллакса: свечение (медленнее всех), миллиметровка
- * и фото-рендер помещения, который прокрутка листает от черновой коробки до готового объекта.
- * На первом экране рендер в полную силу, дальше приглушается, чтобы не мешать читать. Всё — от одного источника прокрутки.
- */
-export function SceneBackground() {
-  const scene = useRef<HTMLDivElement>(null);
-  const glow = useRef<HTMLDivElement>(null);
-  const grid = useRef<HTMLDivElement>(null);
-  const bar = useRef<HTMLSpanElement>(null);
+export function SceneProvider({ children }: { children: ReactNode }) {
+  const story = useRef<HTMLDivElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
+  const track = useRef<HTMLSpanElement>(null);
   const [stage, setStage] = useState(0);
+  const [active, setActive] = useState(true);
+  const level = useQuality();
 
-  useEffect(
-    () =>
-      subscribeScroll(({ progress, hero, finale }) => {
-        const desktop = window.innerWidth >= 1024;
-        const min = desktop ? 0.5 : 0.12;
-        let o = 1 - (1 - min) * Math.min(hero / 0.7, 1);
-        // К блоку «Результат» рендер снова разгорается: ремонт закончен, результат виден до подвала
-        if (finale !== null) {
-          const peak = desktop ? 1 : 0.9;
-          const tail = desktop ? 0.85 : 0.4; // на телефоне под блоком текст поверх рендера — приглушаем
-          const approach = finale > 0 ? Math.max(0, 1 - finale / 0.8) : 1;
-          const after = finale < 0 ? Math.min(-finale / 0.6, 1) : 0;
-          o = Math.max(o, min + (peak - min) * approach - (peak - tail) * after);
-        }
-        if (scene.current) scene.current.style.opacity = String(o);
-        if (glow.current) glow.current.style.transform = `translate3d(0, ${(-progress * 40).toFixed(2)}px, 0)`;
-        if (grid.current) grid.current.style.transform = `translate3d(0, ${(-progress * 120).toFixed(2)}px, 0)`;
-        if (bar.current) bar.current.style.transform = `scaleX(${Math.max(0.04, progress).toFixed(4)})`;
-        setStage(stageAt(progress));
-      }),
-    [],
-  );
+  useEffect(() => {
+    const stop = startSceneMotion();
+    const stageStop = subscribeStage(setStage);
+    const trackStop = subscribeScene(() => { if (track.current) track.current.style.transform = `scaleX(${sceneMotion.current})`; });
+    return () => { stop(); stageStop(); trackStop(); };
+  }, []);
 
-  return (
-    <>
-      <div ref={glow} aria-hidden className="backdrop-glow" />
-      <div ref={grid} aria-hidden className="backdrop-grid" />
-      <div
-        ref={scene}
-        aria-hidden
-        className="scene-layer pointer-events-none fixed top-16 right-0 z-0 h-[40svh] w-full lg:top-0 lg:h-dvh lg:w-[60vw]"
-      >
-        <SceneFrames />
-        {/* Подпись этапа — связывает интерфейс со сценой; только на десктопе */}
-        <div className="scene-hud absolute right-8 bottom-8 hidden w-56 lg:block">
-          <p className="flex items-center gap-2 text-[0.7rem] font-bold tracking-[0.12em] text-fg-3 uppercase">
-            <span className="size-1.5 rounded-full bg-safety shadow-[0_0_10px_2px_rgb(245_135_31/0.6)]" />
-            Этап {stage + 1} / {STAGES.length}
-          </p>
-          <p key={stage} className="scene-hud-title mt-1.5 text-sm font-bold text-fg">
-            {STAGES[stage][1]}
-          </p>
-          <span className="mt-3 block h-px w-full overflow-hidden bg-line">
-            <span ref={bar} className="block h-full origin-left bg-safety" style={{ transform: "scaleX(0.04)" }} />
-          </span>
+  useEffect(() => {
+    const visual = layer.current;
+    if (!visual) return;
+    let anchorX = 0, anchorY = 0, anchorWidth = 1, anchorHeight = 1;
+    let width = 1, height = 1, x = 0, y = 0, scale = 1, measured = false;
+    let inView = true, wasActive = true;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; });
+    observer.observe(visual);
+    const measure = () => {
+      const anchor = story.current?.querySelector<HTMLElement>(".scene-anchor");
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect(), scroll = getScroll();
+      anchorX = rect.left; anchorY = rect.top + scroll.y; anchorWidth = rect.width; anchorHeight = rect.height;
+      width = anchorWidth;
+      height = anchorHeight;
+      visual.style.width = `${width}px`; visual.style.height = `${height}px`;
+      measured = false;
+    };
+    const stopLayout = subscribeLayout(measure);
+    let quietFrames = 0;
+    const stopFrame = subscribeFrame((_, delta) => {
+      const scroll = getScroll();
+      const desktop = scroll.vw >= 1024 && level !== "low";
+      const dock = desktop ? clamp(scroll.y / (scroll.vh * 0.75)) : 0;
+      const initialScale = Math.min(anchorWidth / width, anchorHeight / height);
+      const initialX = anchorX + (anchorWidth - width * initialScale) / 2;
+      const initialY = anchorY - scroll.y + (anchorHeight - height * initialScale) / 2;
+      const dockedScale = Math.min(Math.min(scroll.vw * 0.55, 850) / width, scroll.vh * 0.82 / height);
+      const targetX = initialX + (scroll.vw - width * dockedScale - 16 - initialX) * dock;
+      const targetY = initialY + (Math.max(24, scroll.vh * 0.07) - initialY) * dock;
+      const targetScale = initialScale + (dockedScale - initialScale) * dock;
+      const amount = !measured || reduced.matches || !desktop ? 1 : 1 - Math.exp(-9 * delta);
+      const moving = Math.abs(x - targetX) + Math.abs(y - targetY) + Math.abs(scale - targetScale) > 0.03;
+      x += (targetX - x) * amount; y += (targetY - y) * amount; scale += (targetScale - scale) * amount;
+      if (moving || !measured) {
+        visual.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
+        visual.style.willChange = "transform, opacity"; quietFrames = 0;
+      } else if (++quietFrames === 15) visual.style.willChange = "auto";
+      measured = true;
+      const atResult = scroll.finale === null ? 0 : clamp(1 - Math.abs(scroll.finale) / 0.9);
+      const afterResult = scroll.finale === null ? 0 : clamp((-scroll.finale - 0.6) / 0.7);
+      const opacity = (1 - dock * 0.83 + atResult * dock * 0.83) * (1 - afterResult);
+      visual.style.opacity = opacity.toFixed(3);
+      visual.dataset.docked = String(dock > 0.9);
+      const nextActive = inView && !document.hidden && opacity > 0.01;
+      if (wasActive !== nextActive) { wasActive = nextActive; setActive(nextActive); }
+    });
+    const visibility = () => setActive(!document.hidden && inView);
+    document.addEventListener("visibilitychange", visibility);
+    return () => { stopLayout(); stopFrame(); observer.disconnect(); document.removeEventListener("visibilitychange", visibility); };
+  }, [level]);
+
+  return <SceneContext.Provider value={{ stage }}>
+    <div ref={story} className="scene-story">
+      <div ref={layer} className="scroll-scene-layer" aria-hidden="true">
+        <SceneAsset active={active} />
+        <div className="scroll-scene-hud">
+          <p>Этап 0{stage + 1} / 05 · 3D-макет</p><strong>{STAGES[stage].title}</strong>
+          <div className="hud-stage-list">{STAGES.map((item, i) => <span key={item.short} data-active={i === stage}>{item.short}</span>)}</div>
+          <span className="scroll-scene-track"><span ref={track} /></span>
         </div>
       </div>
-    </>
-  );
+      {children}
+    </div>
+  </SceneContext.Provider>;
+}
+
+export function SceneBackground() {
+  return <><div aria-hidden="true" className="backdrop-glow" /><div aria-hidden="true" className="backdrop-grid" /></>;
+}
+
+export function SceneShowcase() {
+  const { stage } = useContext(SceneContext);
+  const range = useRef<HTMLInputElement>(null);
+  const [manual, setManual] = useState(false);
+  const [manualFrame, setManualFrame] = useState(0);
+  const staticScene = useQuality() === "low";
+  useEffect(() => {
+    let wasManual = sceneMotion.manual;
+    let previousTarget = -1;
+    return subscribeScene(() => {
+    if (wasManual !== sceneMotion.manual) { wasManual = sceneMotion.manual; setManual(wasManual); }
+    if (sceneMotion.manual && sceneMotion.target !== previousTarget) { previousTarget = sceneMotion.target; setManualFrame(Math.round(sceneMotion.target * 143) + 1); }
+    if (range.current) {
+      const value = Math.round((sceneMotion.manual ? sceneMotion.target : sceneMotion.current) * 100);
+      range.current.value = String(value);
+      range.current.setAttribute("aria-valuetext", `${value}% — ${STAGES[stage].title}`);
+    }
+    });
+  }, [stage]);
+  return <div className="scene-showcase">
+    <div className="scene-showcase-header"><span><span className="scene-status-dot" />Путь от идеи до готового объекта</span><span className="scene-format-label">3D-макет</span></div>
+    <div className="scene-visual scene-anchor" role="img" aria-label={`3D-макет ремонта коммерческого помещения. ${STAGES[stage].title}.`}><div className="scene-mobile-poster"><Image src={manual && manualFrame ? `/scene/d/${String(manualFrame).padStart(3, "0")}.avif` : "/scene/poster-d.webp"} fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 80vw, 55vw" alt="" priority className="object-contain" /></div></div>
+    <div className="scene-showcase-controls">
+      <div className="scene-stage-heading"><p className="scene-stage-title">{STAGES[stage].title}</p><span className="scene-stage-count">0{stage + 1} / 05</span></div>
+      <div className="scene-stage-list" role="group" aria-label="Этапы ремонта">{STAGES.map((item, i) => <button key={item.short} type="button" className="scene-stage-button" data-active={stage === i} aria-pressed={stage === i} aria-label={`Показать этап: ${item.title}`} onClick={() => selectSceneProgress(item.progress)}><span>0{i + 1}</span><span>{item.short}</span></button>)}</div>
+      <label className="sr-only" htmlFor="scene-progress">Посмотреть ход ремонта</label>
+      <input ref={range} id="scene-progress" type="range" min={0} max={100} step={1} defaultValue={0} aria-valuetext={`0% — ${STAGES[0].title}`} onChange={(event) => selectSceneProgress(Number(event.target.value) / 100)} className="scene-range" />
+      <div className="scene-showcase-hint"><span>{staticScene ? "Выберите этап или двигайте ползунок" : "Листайте страницу — ремонт идёт"}</span>{manual && !staticScene && <button type="button" className="scene-auto-button" onClick={() => selectSceneProgress(undefined)}>По прокрутке</button>}</div>
+    </div>
+  </div>;
 }

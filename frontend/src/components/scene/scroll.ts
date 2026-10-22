@@ -1,69 +1,88 @@
-/*
- * Единый источник прокрутки для 3D и параллакса фона.
- * Один пассивный слушатель на всё приложение, пересчёт не чаще кадра (rAF).
- * progress — 0 → 1 по всей странице, а если на ней есть блок data-scene-finale (на главной — «Результат»),
- * то 1 — когда этот блок в центре экрана: там ремонт в макете закончен. hero — 0 → 1 в пределах первого экрана.
- * finale — где центр блока data-scene-finale относительно центра экрана, в высотах экрана (> 0 — ниже), или null.
- * 3D читает getScroll() прямо в кадре; сглаживание (инерция камеры) — на стороне сцены.
- */
-
-export type ScrollState = { progress: number; hero: number; y: number; vh: number; finale: number | null };
-type Listener = (s: ScrollState) => void;
-
-const state: ScrollState = { progress: 0, hero: 0, y: 0, vh: 1, finale: null };
-const listeners = new Set<Listener>();
-let raf = 0;
-let resizeObserver: ResizeObserver | null = null;
-
-const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
-
+export type ScrollState = { progress: number; hero: number; y: number; vh: number; vw: number; finale: number | null; activeSection: number };
+type Listener = (state: ScrollState) => void;
+type Frame = (time: number, delta: number) => void;
+const state: ScrollState = { progress: 0, hero: 0, y: 0, vh: 1, vw: 1, finale: null, activeSection: 0 };
+const scrollListeners = new Set<Listener>();
+const layoutListeners = new Set<() => void>();
+const frames = new Set<Frame>();
+const renderers = new Set<Frame>();
+const sectionIds = ["home", "uslugi", "postavka", "o-kompanii", "obsudit"];
+let sectionTops: number[] = [];
+let finaleCenter = 0, sceneEnd = 1, pageEnd = 1;
+let dirty = true, running = false, lastY = -1;
+let observer: ResizeObserver | null = null;
+let scrollDriver: ((time: number) => void) | null = null;
+let ticker: (typeof import("gsap"))["gsap"]["ticker"] | null = null;
+let bootTimer: ReturnType<typeof setTimeout>;
+const readyListeners = new Set<() => void>();
+const clamp = (n: number) => Math.min(1, Math.max(0, n));
+const invalidateLayout = () => { dirty = true; };
 function measure() {
-  raf = 0;
-  const vh = window.innerHeight || 1;
-  state.y = window.scrollY;
-  state.vh = vh;
+  dirty = false;
+  state.vh = window.innerHeight || 1;
+  state.vw = document.documentElement.clientWidth;
+  pageEnd = document.documentElement.scrollHeight - state.vh;
   const finale = document.querySelector<HTMLElement>("[data-scene-finale]");
-  if (finale) {
-    const r = finale.getBoundingClientRect();
-    const center = r.top + r.height / 2 - vh / 2;
-    const end = state.y + center;
-    state.finale = center / vh;
-    state.progress = end > 0 ? clamp01(state.y / end) : 1;
-  } else {
-    const max = document.documentElement.scrollHeight - vh;
-    state.finale = null;
-    state.progress = max > 0 ? clamp01(state.y / max) : 0;
+  finaleCenter = finale ? finale.getBoundingClientRect().top + state.y + finale.offsetHeight / 2 : 0;
+  const story = document.querySelector<HTMLElement>(".scene-story");
+  const start = story ? story.getBoundingClientRect().top + state.y : 0;
+  sceneEnd = Math.max(1, finaleCenter - state.vh / 2 - start);
+  sectionTops = sectionIds.map((id) => {
+    const element = document.getElementById(id);
+    return element ? element.getBoundingClientRect().top + state.y : Infinity;
+  });
+  layoutListeners.forEach((listener) => listener());
+}
+function tick(time: number, milliseconds: number) {
+  if (document.hidden) return;
+  scrollDriver?.(time * 1000);
+  state.y = Math.max(0, window.scrollY);
+  const measured = dirty;
+  if (dirty) measure();
+  if (state.y !== lastY || measured) {
+    state.progress = clamp(state.y / (finaleCenter ? sceneEnd : Math.max(1, pageEnd)));
+    state.hero = clamp(state.y / state.vh);
+    state.finale = finaleCenter ? (finaleCenter - state.y - state.vh / 2) / state.vh : null;
+    let nearest = -Infinity;
+    state.activeSection = 0;
+    for (let i = 0; i < sectionTops.length; i++) {
+      if (sectionTops[i] <= state.y + state.vh * 0.36 && sectionTops[i] > nearest) { nearest = sectionTops[i]; state.activeSection = i; }
+    }
+    scrollListeners.forEach((listener) => listener(state));
+    lastY = state.y;
   }
-  state.hero = clamp01(state.y / vh);
-  listeners.forEach((l) => l(state));
+  const delta = Math.min(milliseconds / 1000, 0.05);
+  frames.forEach((listener) => listener(time, delta));
+  renderers.forEach((listener) => listener(time, delta));
 }
-
-function schedule() {
-  if (!raf) raf = requestAnimationFrame(measure);
-}
-
-export function getScroll() {
-  return state;
-}
-
-export function subscribeScroll(fn: Listener) {
-  if (listeners.size === 0) {
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    // Высота страницы меняется без прокрутки: переход между страницами, подгрузка шрифтов
-    resizeObserver = new ResizeObserver(schedule);
-    resizeObserver.observe(document.body);
-  }
-  listeners.add(fn);
-  measure();
-  return () => {
-    listeners.delete(fn);
-    if (listeners.size) return;
-    window.removeEventListener("scroll", schedule);
-    window.removeEventListener("resize", schedule);
-    resizeObserver?.disconnect();
-    resizeObserver = null;
-    cancelAnimationFrame(raf);
-    raf = 0;
+function start() {
+  if (running) return;
+  running = true; dirty = true;
+  const boot = () => {
+    bootTimer = setTimeout(async () => {
+      const { gsap } = await import("gsap");
+      if (!running) return;
+      ticker = gsap.ticker;
+      ticker.fps(performanceBudget.targetFps); ticker.add(tick);
+      readyListeners.forEach((listener) => listener());
+    }, performanceBudget.motionDelayMs);
   };
+  if (document.readyState === "complete") boot();
+  else window.addEventListener("load", boot, { once: true });
+  window.addEventListener("resize", invalidateLayout, { passive: true });
+  observer = new ResizeObserver(invalidateLayout);
+  observer.observe(document.body);
+  document.fonts.ready.then(invalidateLayout);
 }
+function stopIfUnused() {
+  if (scrollListeners.size || layoutListeners.size || frames.size || renderers.size || scrollDriver) return;
+  ticker?.remove(tick); ticker = null; running = false; clearTimeout(bootTimer);
+  window.removeEventListener("resize", invalidateLayout); observer?.disconnect(); observer = null;
+}
+export const getScroll = () => state;
+export function subscribeScroll(listener: Listener) { scrollListeners.add(listener); start(); dirty = true; return () => { scrollListeners.delete(listener); stopIfUnused(); }; }
+export function subscribeLayout(listener: () => void) { layoutListeners.add(listener); start(); dirty = true; return () => { layoutListeners.delete(listener); stopIfUnused(); }; }
+export function subscribeFrame(listener: Frame, render = false) { const collection = render ? renderers : frames; collection.add(listener); start(); return () => { collection.delete(listener); stopIfUnused(); }; }
+export function setScrollDriver(driver: typeof scrollDriver) { scrollDriver = driver; if (driver) start(); else stopIfUnused(); }
+export function onMotionReady(listener: () => void) { readyListeners.add(listener); start(); if (ticker) listener(); return () => { readyListeners.delete(listener); }; }
+import { performanceBudget } from "./quality";

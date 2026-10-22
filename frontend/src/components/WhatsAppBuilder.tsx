@@ -40,7 +40,7 @@ function Chips({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on ? null : o)}
-              className={`h-10 rounded-full border px-4 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
+              className={`min-h-10 max-w-full rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
                 on
                   ? "border-safety bg-safety text-[#1a0e02]"
                   : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
@@ -74,7 +74,7 @@ export function WhatsAppBuilder() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <Chips label="Что нужно сделать" options={tasks} value={task} onChange={setTask} />
         <Chips label="Какой объект" options={places} value={place} onChange={setPlace} />
         <div className="grid gap-6 sm:grid-cols-[10rem_1fr]">
@@ -103,7 +103,7 @@ export function WhatsAppBuilder() {
       </div>
 
       {/* Превью: так сообщение увидит менеджер */}
-      <div className="flex flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
+      <div className="flex min-w-0 flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
         <div className="flex items-center gap-3 border-b border-line pb-4">
           <span className="grid size-10 place-items-center rounded-full bg-[#25d366]/15 text-[#25d366]">
             <WhatsAppIcon className="size-5" />
@@ -116,7 +116,7 @@ export function WhatsAppBuilder() {
         <div className="flex flex-1 items-end py-5">
           <div
             aria-live="polite"
-            className="ml-auto max-w-[92%] rounded-2xl rounded-br-md bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg"
+            className="ml-auto min-w-0 max-w-[92%] rounded-2xl rounded-br-md bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg [overflow-wrap:anywhere]"
           >
             {message}
           </div>

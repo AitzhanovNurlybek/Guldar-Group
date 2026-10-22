@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { subscribeFrame } from "./scene/scroll";
 import { Icon, WhatsAppIcon } from "./Icons";
 import { calculator, waLink } from "@/lib/site";
 
@@ -14,22 +15,19 @@ const money = (n: number) => `${(Math.max(0, Math.round(n / 1000)) * 1000).toLoc
 // Число плавно «доезжает» до нового значения — без скачков при каждом движении ползунка
 function useTween(target: number) {
   const [value, setValue] = useState(target);
-  const from = useRef(target);
+  const from = useRef({ value: target });
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const start = performance.now();
-    const a = from.current;
-    let raf = 0;
-    const step = (now: number) => {
-      const t = reduced ? 1 : Math.min((now - start) / 450, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const v = a + (target - a) * eased;
-      from.current = v;
-      setValue(v);
-      if (t < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    const initial = from.current.value;
+    let elapsed = 0;
+    const stop = subscribeFrame((_, delta) => {
+      elapsed += delta;
+      const progress = reduced ? 1 : Math.min(elapsed / 0.45, 1);
+      from.current.value = initial + (target - initial) * (1 - (1 - progress) ** 3);
+      setValue(from.current.value);
+      if (progress === 1) stop();
+    });
+    return stop;
   }, [target]);
   return value;
 }
@@ -57,7 +55,7 @@ function Chips<T extends string>({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(o.id)}
-              className={`h-10 rounded-full border px-4 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
+              className={`min-h-10 max-w-full rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
                 on ? "border-safety bg-safety text-[#1a0e02]" : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
               }`}
             >
@@ -85,7 +83,7 @@ function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on
         <span className="block text-sm font-semibold">{label}</span>
         <span className="block text-xs text-fg-3">{hint}</span>
       </span>
-      <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-safety" : "bg-white/15"}`}>
+      <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-safety" : "bg-line-strong"}`}>
         <span
           className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform duration-300 ease-(--ease-fluid) ${
             on ? "translate-x-[1.125rem]" : "translate-x-0.5"
@@ -227,10 +225,11 @@ export function PriceCalculator() {
       {/* Итог */}
       <div className="flex min-w-0 flex-col rounded-3xl border border-line bg-ink-950/70 p-5 sm:p-6">
         <p className="text-sm font-semibold text-fg-2">Ориентировочно</p>
-        <p className="mt-2 text-[clamp(1.9rem,3vw+0.8rem,2.8rem)] leading-tight font-extrabold tracking-[-0.03em] tabular-nums" aria-live="polite">
+        <p className="mt-2 text-[clamp(1.5rem,2.4vw+0.8rem,2.8rem)] leading-tight font-extrabold tracking-[-0.03em] tabular-nums" aria-hidden="true">
           {money(shownLow)}
           <span className="block text-[0.55em] font-bold text-fg-2">до {money(shownHigh)}</span>
         </p>
+        <p className="sr-only" aria-live="polite">Ориентировочная стоимость: от {money(low)} до {money(high)}.</p>
         {perArea && area > 0 && (
           <p className="mt-2 text-sm text-fg-3">
             ≈ {money(low / area)} – {money(high / area)} за м²
@@ -240,7 +239,7 @@ export function PriceCalculator() {
         <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm">
           {lines.map((l) => (
             <li key={l.label} className="flex justify-between gap-4">
-              <span className="text-fg-2">{l.label}</span>
+              <span className="min-w-0 text-fg-2 [overflow-wrap:anywhere]">{l.label}</span>
               <span className="shrink-0 font-semibold tabular-nums">от {money(l.sum)}</span>
             </li>
           ))}

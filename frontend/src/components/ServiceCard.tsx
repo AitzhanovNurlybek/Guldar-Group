@@ -1,52 +1,23 @@
+import Link from "next/link";
 import { Icon, WhatsAppIcon, type IconName } from "./Icons";
 import { waLink } from "@/lib/site";
+import { getServiceHref } from "@/lib/service-details";
 
 export function IconTile({ name, size = "md" }: { name: IconName; size?: "sm" | "md" }) {
-  return (
-    <span
-      className={`grid shrink-0 place-items-center rounded-xl border border-line-strong bg-steel-600/40 text-ice-300 ${
-        size === "sm" ? "size-10" : "size-12"
-      }`}
-    >
-      <Icon name={name} className={size === "sm" ? "size-[1.15rem]" : "size-[1.35rem]"} />
-    </span>
-  );
+  return <span className={`icon-tile ${size === "sm" ? "size-10" : "size-12"}`}><Icon name={name} className={size === "sm" ? "size-5" : "size-6"} /></span>;
 }
 
-// Карточка услуги. compact — без описания: для главной, где важнее быстро пробежать глазами
-export function ServiceCard({
-  title,
-  text,
-  price,
-  icon,
-  compact = false,
-}: {
-  title: string;
-  text: string;
-  price?: string;
-  icon: IconName;
-  compact?: boolean;
+export function ServiceCard({ slug, title, text, price, icon, compact = false, number }: {
+  slug?: string; title: string; text: string; price?: string; icon: IconName; compact?: boolean; number?: number;
 }) {
-  return (
-    <a
-      href={waLink(`Здравствуйте! Интересует: ${title.toLowerCase()}. Можно обсудить?`)}
-      target="_blank"
-      rel="noopener"
-      className="panel lift group flex h-full flex-col rounded-2xl p-5 sm:p-6"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <IconTile name={icon} />
-        {price && (
-          <span className="rounded-lg bg-safety/12 px-2.5 py-1 text-sm font-bold text-safety">{price}</span>
-        )}
-      </div>
-      <h3 className="mt-5 text-lg leading-snug font-bold tracking-[-0.015em]">{title}</h3>
-      {!compact && <p className="mt-1.5 flex-1 text-[0.95rem] leading-relaxed text-fg-2">{text}</p>}
-      <span className="mt-4 inline-flex items-center gap-2 self-start text-sm font-bold text-safety transition-colors group-hover:text-fg">
-        <WhatsAppIcon className="size-4" />
-        Обсудить
-        <Icon name="arrow" className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-      </span>
-    </a>
-  );
+  const detailHref = slug ? getServiceHref(slug) : undefined;
+  const className = "panel lift service-card group flex h-full flex-col";
+  const content = <>
+    <div className="flex items-start justify-between gap-3"><IconTile name={icon} />{number && <span className="service-number">0{number}</span>}</div>
+    <h3 className="mt-6 text-lg leading-snug font-bold tracking-[-0.025em]">{title}</h3>
+    {!compact && <p className="mt-3 flex-1 text-sm leading-relaxed text-fg-2">{text}</p>}
+    {price && <p className="mt-4 text-xs font-semibold text-fg-2">Ориентир: {price}</p>}
+    <span className="service-link">{detailHref ? "Подробнее об услуге" : <><WhatsAppIcon className="size-4" />Обсудить в WhatsApp</>}<Icon name="arrowUpRight" className="ml-auto size-4 transition-transform group-hover:translate-x-0.5" /></span>
+  </>;
+  return detailHref ? <Link href={detailHref} className={className}>{content}</Link> : <a href={waLink(`Здравствуйте! Интересует: ${title.toLowerCase()}. Можно обсудить?`)} target="_blank" rel="noopener noreferrer" className={className}>{content}</a>;
 }

@@ -1,5 +1,3 @@
-import { site } from "@/lib/site";
-
 // Знак перерисован с логотипа компании (оригинал 60×84 px — для сайта мал).
 // TODO: запросить у заказчика вектор (SVG/AI/PDF) и заменить.
 export function LogoMark({ className = "size-9" }: { className?: string }) {
@@ -11,7 +9,7 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
           <stop offset="1" stopColor="#1f64a0" />
         </linearGradient>
       </defs>
-      <g fill="none" stroke="#9fd1f4" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round">
         <path d="M2 41h5M41 41h5" />
         <path d="M7 41V29l8-4.5" />
         <path d="M41 41V29l-8-4.5" />
@@ -27,11 +25,11 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
 function Wordmark({ compact }: { compact?: boolean }) {
   return (
     <span className="block leading-none whitespace-nowrap">
-      <span className="block text-[1.12rem] font-extrabold tracking-[-0.02em] text-fg">
+      <span className="logo-wordmark-title block text-[1.12rem] font-extrabold tracking-[-0.02em] text-fg">
         GulDar <span className="font-semibold text-ice-300">Group</span>
       </span>
       {!compact && (
-        <span className="mt-1.5 block text-[0.52rem] font-bold tracking-[0.12em] text-signal uppercase">{site.motto}</span>
+        <span className="mt-1.5 block text-[0.5rem] font-bold tracking-[0.08em] text-signal uppercase">Строительная компания</span>
       )}
     </span>
   );

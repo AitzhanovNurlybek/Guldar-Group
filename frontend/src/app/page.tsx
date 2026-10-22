@@ -1,250 +1,126 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ClientLogos } from "@/components/ClientLogos";
 import { Container, SectionHead } from "@/components/Container";
 import { Icon, WhatsAppIcon, type IconName } from "@/components/Icons";
 import { Reveal } from "@/components/Reveal";
-import { PriceCalculator } from "@/components/PriceCalculator";
+import { DeferredWidget } from "@/components/DeferredWidgets";
 import { IconTile, ServiceCard } from "@/components/ServiceCard";
-import { WhatsAppBuilder } from "@/components/WhatsAppBuilder";
-import { featuredServices, productGroups, projects, services, site, steps, waGreeting, waLink } from "@/lib/site";
+import { SceneProvider, SceneShowcase } from "@/components/scene/SceneBackground";
+import { AnimatedNumber } from "@/components/MotionEffects";
+import { HomeChoreography } from "@/components/HomeChoreography";
+import { productGroups, projects, services, site, waGreeting, waLink } from "@/lib/site";
 
-const perks = ["Договор и гарантия", "Материалы от нас", `${services.length} видов работ`];
-
-const ktoRoles: { icon: IconName; label: string }[] = [
-  { icon: "bolt", label: "Электрик" },
-  { icon: "drop", label: "Сантехник" },
-  { icon: "hammer", label: "Мастер" },
+const mainServices = ["pod-klyuch", "otdelka", "elektromontazh", "santehnika", "kto", "metallokonstrukcii"].map(
+  (slug) => services.find((service) => service.slug === slug)!,
+);
+const places: { icon: IconName; title: string; text: string }[] = [
+  { icon: "building", title: "Офисы", text: "Рабочие пространства и кабинеты" },
+  { icon: "box", title: "Магазины", text: "Торговые залы и павильоны" },
+  { icon: "key", title: "Кафе и рестораны", text: "Залы для гостей и рабочие зоны" },
+  { icon: "layers", title: "Склады", text: "Помещения для хранения и работы" },
+];
+const process = [
+  { title: "Обсуждаем задачу", text: "Вы рассказываете о помещении, нужных работах и сроках. Можно начать с фото в WhatsApp." },
+  { title: "Считаем смету", text: "После осмотра и замеров определяем объём работ, материалы и стоимость." },
+  { title: "Делаем ремонт", text: "Согласовываем договор и выполняем работы: от демонтажа до чистовой отделки." },
+  { title: "Передаём объект", text: "Проверяем результат вместе с вами. При необходимости обсуждаем дальнейшее обслуживание." },
+];
+const faq = [
+  { question: "Какие помещения вы ремонтируете?", answer: "Офисы, магазины, торговые помещения, кафе, рестораны и склады в Алматы. Можно заказать ремонт под ключ или отдельные работы: отделку, электрику, сантехнику и демонтаж." },
+  { question: "Что входит в ремонт под ключ?", answer: "Демонтаж, инженерные работы и отделка помещения. Конкретный перечень, материалы и этапы согласовываем для вашего объекта и фиксируем в договоре." },
+  { question: "Как узнать стоимость ремонта?", answer: "Калькулятор на сайте поможет оценить бюджет по площади и виду работ. Это предварительный ориентир. Точную смету составляем после осмотра помещения и согласования задачи." },
+  { question: "Можно заказать материалы вместе с работами?", answer: "Да. GulDar Group также поставляет строительные материалы, электротехническую продукцию, инструменты и запорную арматуру. Состав и условия поставки обсуждаем под ваш объект." },
+  { question: "Как начать работу с вами?", answer: "Напишите в WhatsApp или позвоните. Укажите тип помещения, примерную площадь, нужные работы и желаемые сроки. Если есть фотографии или план — приложите их в переписке." },
 ];
 
 export default function Home() {
   return (
-    <>
-      {/* ── Первый экран: текст слева, макет помещения на фоне справа ── */}
-      <section className="relative">
-        <Container className="grid lg:min-h-dvh lg:grid-cols-[1.05fr_1fr] lg:items-center">
-          {/* На телефоне сверху место под макет */}
-          <div aria-hidden className="h-[calc(40svh+4rem)] lg:hidden" />
-          <div className="relative pb-10 lg:py-16">
-            <p className="eyebrow">С {site.foundedYear} года · Алматы</p>
-            <h1 className="display mt-5">
-              Ремонт коммерческих помещений <span className="accent-text">под ключ</span>
-            </h1>
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-fg-2">
-              Офисы, магазины, кафе и склады — одна бригада, один договор.
-            </p>
-            <ul className="mt-6 flex flex-wrap gap-2">
-              {perks.map((p) => (
-                <li key={p} className="flex items-center gap-1.5 rounded-full border border-line bg-ink-900/60 px-3 py-1.5 text-sm font-semibold text-fg-2">
-                  <Icon name="check" className="size-4 text-safety" />
-                  {p}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href={waLink(waGreeting)} target="_blank" rel="noopener" className="btn btn-accent">
-                <WhatsAppIcon />
-                Обсудить в WhatsApp
-              </a>
-              <a href="#kalkulyator" className="btn btn-ghost">
-                Рассчитать цену
-                <Icon name="arrow" className="size-4 rotate-90" />
-              </a>
+    <SceneProvider>
+      <HomeChoreography />
+      <section id="home" className="hero-section">
+        <Container>
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <p className="eyebrow">Строительная компания · Алматы</p>
+              {/* avoid-ai-design-ignore: SD5 */}
+              <h1 className="display hero-title mt-6">Ремонт офисов<br />и магазинов<br /><span className="accent-text">под ключ.</span><span className="hero-title-mask" aria-hidden="true"><span /><span /><span /></span></h1>
+              <p className="hero-lead">Готовим помещения к работе вашего бизнеса. От демонтажа и инженерных сетей до отделки и поставки материалов.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a href="#kalkulyator" className="btn btn-accent">Рассчитать стоимость<Icon name="arrowUpRight" className="size-5" /></a>
+                <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost"><WhatsAppIcon className="size-5" />Обсудить проект</a>
+              </div>
+              <ul className="hero-promises">
+                {["Работаем по договору", "Смета до начала работ"].map((item) => <li key={item}><Icon name="check" className="size-4" />{item}</li>)}
+                <li><Icon name="check" className="size-4" />С <AnimatedNumber value={site.foundedYear} /> года</li>
+              </ul>
             </div>
-            <div className="mt-10">
-              <p className="mb-3 text-sm text-fg-3">Работали с:</p>
-              <ClientLogos />
-            </div>
-            <p className="mt-10 hidden items-center gap-2 text-sm font-semibold text-fg-3 lg:flex">
-              <Icon name="arrow" className="size-4 rotate-90 text-safety" />
-              Листайте — ремонт идёт
-            </p>
+            <SceneShowcase />
+          </div>
+          <div className="hero-bottom">
+            <span>ВАШЕ ПОМЕЩЕНИЕ. НАША РАБОТА.</span>
+            <a href="#uslugi">Узнайте, что мы делаем<Icon name="arrow" className="size-4 rotate-90" /></a>
           </div>
         </Container>
       </section>
 
-      {/* ── Услуги ── */}
-      <section className="py-16 sm:py-24">
+      <section className="object-strip" aria-label="С какими помещениями работаем">
+        <Container className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {places.map((place) => <div key={place.title} className="flex items-center gap-4"><Icon name={place.icon} className="size-7 shrink-0 text-safety" /><div><p className="font-display text-base font-bold">{place.title}</p><p className="mt-1 text-xs text-fg-2">{place.text}</p></div></div>)}
+        </Container>
+      </section>
+
+      <section id="uslugi" className="section-space scroll-mt-28">
         <Container>
-          <Reveal className="flex flex-wrap items-end justify-between gap-4">
-            <SectionHead eyebrow="Услуги" title="Что делаем" />
-            <Link href="/uslugi" className="btn btn-ghost">
-              Все услуги и цены
-              <Icon name="arrow" className="size-4" />
-            </Link>
+          <Reveal className="section-heading-row">
+            <SectionHead eyebrow="01 / Чем можем помочь" title={<>Все работы.<br />Одна команда.</>} lead="Нужен полный ремонт или отдельный специалист? Подключимся на нужном этапе." />
+            <Link href="/uslugi" className="text-link">Все услуги и цены<Icon name="arrowUpRight" className="size-5" /></Link>
           </Reveal>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredServices.map((s, i) => (
-              <Reveal key={s.slug} delay={(i % 3) * 70}>
-                <ServiceCard {...s} compact />
-              </Reveal>
-            ))}
+          <div className="services-grid mt-10 grid gap-4 sm:grid-cols-2">
+            {mainServices.map((service, i) => <Reveal key={service.slug} delay={(i % 3) * 60}><ServiceCard {...service} number={i + 1} /></Reveal>)}
           </div>
         </Container>
       </section>
 
-      {/* ── Калькулятор ── */}
-      <section id="kalkulyator" className="scroll-mt-24 pb-16 sm:pb-24">
+      <section id="kalkulyator" className="scroll-mt-28 pb-16 sm:pb-24">
         <Container>
-          <Reveal>
-            <div className="panel-strong overflow-hidden rounded-3xl">
-              <div className="hazard h-1.5" aria-hidden />
-              <div className="p-6 sm:p-10">
-                <SectionHead eyebrow="Калькулятор" title="Сколько стоит ремонт" lead="Выберите работы и площадь — покажем вилку цен." />
-                <div className="mt-8">
-                  <PriceCalculator />
-                </div>
-              </div>
-            </div>
+          <Reveal className="panel-strong calculator-panel overflow-hidden rounded-3xl p-5 sm:p-10 lg:p-12">
+            <div className="section-heading-row"><SectionHead eyebrow="02 / Планируем бюджет" title="Сколько стоит ваш ремонт?" lead="Выберите вид работ и площадь. Получите предварительный диапазон стоимости и отправьте его нам для уточнения." /><span className="estimate-tag"><Icon name="ruler" className="size-5" />Расчёт онлайн</span></div>
+            <div className="mt-9"><DeferredWidget kind="calculator" /></div>
           </Reveal>
         </Container>
       </section>
 
-      {/* ── Техобслуживание ── */}
-      <section className="py-8">
+      <section id="o-kompanii" className="section-space process-section scroll-mt-28">
         <Container>
-          <Reveal>
-            <div className="panel-strong overflow-hidden rounded-3xl">
-              <div className="hazard h-1.5" aria-hidden />
-              <div className="grid items-center gap-10 p-6 sm:p-10 lg:grid-cols-2">
-                <div>
-                  <p className="eyebrow">Для сетей и офисов</p>
-                  <h2 className="title mt-3">Техобслуживание по договору</h2>
-                  <p className="mt-3 text-lg text-fg-2">Электрик, сантехник и мастер — без своего штата.</p>
-                  <a
-                    href={waLink("Здравствуйте! Интересует техническое обслуживание помещений. Можно обсудить условия?")}
-                    target="_blank"
-                    rel="noopener"
-                    className="btn btn-accent mt-7"
-                  >
-                    <WhatsAppIcon />
-                    Обсудить обслуживание
-                  </a>
-                </div>
-                {/* Три специалиста → один договор */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="flex flex-wrap justify-center gap-2.5">
-                    {ktoRoles.map((r) => (
-                      <div key={r.label} className="flex items-center gap-2.5 rounded-2xl border border-line bg-ink-950/60 py-2 pr-4 pl-2">
-                        <IconTile name={r.icon} size="sm" />
-                        <span className="font-bold">{r.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Icon name="arrow" className="size-7 rotate-90 text-safety" />
-                  <div className="rounded-2xl border-2 border-safety bg-safety/10 px-10 py-5 text-center">
-                    <p className="font-display text-5xl font-extrabold tracking-[-0.04em] text-safety">1</p>
-                    <p className="mt-1 font-bold">договор</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </Container>
-      </section>
-
-      {/* ── Как работаем ── */}
-      <section className="py-16 sm:py-24">
-        <Container>
-          <Reveal>
-            <SectionHead eyebrow="Как работаем" title="Четыре шага" />
-          </Reveal>
-          <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s, i) => (
-              <Reveal as="li" key={s.title} delay={i * 70} className="panel flex items-center gap-4 rounded-2xl p-5">
-                <span className="relative">
-                  <IconTile name={s.icon} />
-                  <span className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full bg-safety text-xs font-extrabold text-[#1a0e02]">
-                    {i + 1}
-                  </span>
-                </span>
-                <span className="font-bold leading-snug">{s.title}</span>
-              </Reveal>
-            ))}
+          <Reveal><SectionHead eyebrow="03 / Как всё устроено" title="Понятно на каждом этапе" lead="Сначала согласовываем задачу и стоимость. Затем превращаем план в готовое помещение." /></Reveal>
+          <ol className="process-grid mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {process.map((step, i) => <Reveal as="li" key={step.title} delay={i * 60}><span className="process-number">0{i + 1}</span><h3 className="mt-5 text-lg font-bold">{step.title}</h3><p className="mt-3 text-sm leading-relaxed text-fg-2">{step.text}</p></Reveal>)}
           </ol>
         </Container>
       </section>
 
-      {/* ── Объекты (появится, когда будут фото) ── */}
-      {projects.length > 0 && (
-        <section className="pb-16 sm:pb-24">
-          <Container>
-            <Reveal>
-              <SectionHead eyebrow="Объекты" title="Что мы уже сделали" />
-            </Reveal>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p, i) => (
-                <Reveal key={p.image} delay={(i % 3) * 70}>
-                  <figure className="panel overflow-hidden rounded-2xl">
-                    <div className="relative aspect-[4/3]">
-                      <Image src={p.image} alt={p.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
-                    </div>
-                    <figcaption className="p-5">
-                      <p className="font-bold">{p.title}</p>
-                      <p className="mt-1 text-sm text-fg-2">{p.place}</p>
-                    </figcaption>
-                  </figure>
-                </Reveal>
-              ))}
-            </div>
-          </Container>
-        </section>
-      )}
+      {projects.length > 0 && <section className="section-space"><Container><SectionHead eyebrow="Объекты" title="Наши работы" /><div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{projects.map((project) => <figure key={project.image} className="panel overflow-hidden rounded-2xl"><div className="relative aspect-[4/3]"><Image src={project.image} alt={project.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" /></div><figcaption className="p-5"><p className="font-bold">{project.title}</p><p className="mt-1 text-sm text-fg-2">{project.place}</p></figcaption></figure>)}</div></Container></section>}
 
-      {/* ── Поставка ── */}
-      <section className="pb-16 sm:pb-24">
+      <section data-scene-finale className="section-space scene-finale">
         <Container>
-          <Reveal className="flex flex-wrap items-end justify-between gap-4">
-            <SectionHead eyebrow="Поставка" title="Материалы — тоже от нас" />
-            <Link href="/produkciya" className="btn btn-ghost">
-              Подробнее
-              <Icon name="arrow" className="size-4" />
-            </Link>
-          </Reveal>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {productGroups.map((p, i) => (
-              <Reveal key={p.title} delay={i * 70}>
-                <div className="panel flex h-full items-center gap-4 rounded-2xl p-4">
-                  <IconTile name={p.icon} size="sm" />
-                  <span className="font-bold leading-snug">{p.title}</span>
-                </div>
-              </Reveal>
-            ))}
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
+            <Reveal><SectionHead eyebrow="После ремонта" title="Помещение готово. Мы остаёмся на связи." lead="Электрика, сантехника и мелкий ремонт нужны и после открытия. Возьмём техническое обслуживание на себя." /><div className="mt-7 flex flex-wrap gap-2">{(["bolt", "drop", "hammer"] as IconName[]).map((icon) => <IconTile key={icon} name={icon} />)}</div><Link href="/uslugi/kto" className="text-link mt-7">Об обслуживании помещений<Icon name="arrowUpRight" className="size-5" /></Link></Reveal>
+            <div className="scene-finale-window" aria-label="Результат ремонта в 3D-макете"><span>От чернового помещения до готового пространства</span><p>Иллюстрация этапов ремонта · 3D-макет</p></div>
           </div>
         </Container>
       </section>
 
-      {/* ── Результат: на этом блоке ремонт в макете заканчивается, макет виден полностью ── */}
-      <section data-scene-finale className="relative">
-        <Container className="flex min-h-[80svh] items-end pb-10 lg:min-h-[92dvh] lg:items-center lg:pb-0">
-          <Reveal className="max-w-sm">
-            <p className="eyebrow">Результат</p>
-            <h2 className="title mt-3">Ремонт закончен — можно открываться</h2>
-            <p className="mt-3 text-lg text-fg-2">Свет, плитка, витрина и вывеска — по одному договору.</p>
-            <a href="#obsudit" className="btn btn-accent mt-7">
-              Хочу так же
-              <Icon name="arrow" className="size-4 rotate-90" />
-            </a>
-          </Reveal>
-        </Container>
+      <section id="postavka" className="scroll-mt-28 pb-16 sm:pb-24">
+        <div className="materials-rail" aria-hidden="true"><div className="materials-track">{[...productGroups, ...productGroups].map((group, i) => <span key={`${group.title}-${i}`}>{group.title}<span className="material-joint" /></span>)}</div></div>
+        <Container><Reveal className="supply-panel">
+          <div><p className="eyebrow">Комплектуем ваш объект</p><h2 className="title mt-3">Материалы? Тоже к нам.</h2><p className="mt-4 max-w-lg text-fg-2">Подберём поставку под согласованный перечень работ.</p><Link href="/produkciya" className="text-link mt-6">Подробнее о поставках<Icon name="arrowUpRight" className="size-5" /></Link></div>
+          <div className="grid gap-5 sm:grid-cols-2">{productGroups.map((group) => <div key={group.title} className="flex gap-3"><Icon name={group.icon} className="mt-1 size-6 shrink-0 text-safety" /><div><p className="font-bold">{group.title}</p><p className="mt-1 text-sm leading-relaxed text-fg-2">{group.text}</p></div></div>)}</div>
+        </Reveal></Container>
       </section>
 
-      {/* ── Давайте обсудим ── */}
-      <section id="obsudit" className="scroll-mt-24 py-8">
-        <Container>
-          <Reveal>
-            <div className="panel-strong overflow-hidden rounded-3xl">
-              <div className="hazard h-1.5" aria-hidden />
-              <div className="p-6 sm:p-10">
-                <SectionHead eyebrow="Давайте обсудим" title="Расскажите об объекте" lead="Отметьте пару вариантов — сообщение соберётся само." />
-                <div className="mt-8">
-                  <WhatsAppBuilder />
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </Container>
-      </section>
-    </>
+      <section className="pb-16 sm:pb-24"><Container className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHead eyebrow="Ответы на вопросы" title="До начала работ" lead="Коротко о том, что обычно важно знать." /><div className="faq-list">{faq.map((item) => <details key={item.question}><summary>{item.question}<span aria-hidden>+</span></summary><p>{item.answer}</p></details>)}</div></Container></section>
+
+      <section id="obsudit" className="scroll-mt-28 pb-8"><Container><Reveal className="panel-strong overflow-hidden rounded-3xl p-5 sm:p-10 lg:p-12"><SectionHead eyebrow="Начнём с вашей задачи" title="Давайте обсудим ваш объект" lead="Выберите нужные работы и расскажите о помещении — подготовим сообщение для WhatsApp." /><div className="mt-8"><DeferredWidget kind="whatsapp" /></div></Reveal></Container></section>
+    </SceneProvider>
   );
 }

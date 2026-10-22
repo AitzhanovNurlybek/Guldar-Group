@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/Container";
 import { Icon, WhatsAppIcon } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { IconTile } from "@/components/ServiceCard";
 import { productGroups, site, waLink } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Поставка материалов",
-  description: "Электротехническая продукция, строительные материалы, инструменты и запорная арматура в Алматы.",
-};
+export const metadata = pageMetadata(
+  "Поставка строительных материалов в Алматы",
+  "Стройматериалы, электротехническая продукция, инструменты и запорная арматура для объектов в Алматы. Отправьте список для расчёта цены и сроков поставки.",
+  "/produkciya",
+);
 
 export default function ProductsPage() {
   return (
@@ -31,7 +32,7 @@ export default function ProductsPage() {
                   href={waLink(`Здравствуйте! Нужен прайс: ${p.title.toLowerCase()}.`)}
                   target="_blank"
                   rel="noopener"
-                  className="mt-6 inline-flex items-center gap-2 self-start text-sm font-medium text-safety hover:text-fg"
+                  className="mt-6 inline-flex items-center gap-2 self-start text-sm font-medium text-signal hover:text-fg"
                 >
                   <WhatsAppIcon className="size-4" />
                   Запросить прайс

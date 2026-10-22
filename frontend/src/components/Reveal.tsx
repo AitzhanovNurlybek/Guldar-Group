@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { animationConfig } from "./scene/animation-config";
 
 // Блок мягко проявляется, когда доезжает до экрана. Один раз, без повторов.
 export function Reveal({
@@ -20,6 +21,8 @@ export function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.dataset.animate = "true";
     const io = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
@@ -38,7 +41,7 @@ export function Reveal({
       ref={ref as React.RefObject<HTMLDivElement & HTMLLIElement>}
       data-shown={shown}
       className={`reveal ${className}`}
-      style={{ "--delay": `${delay}ms` } as CSSProperties}
+      style={{ "--delay": `${delay}ms`, "--reveal-duration": `${animationConfig.revealDuration}s` } as CSSProperties}
     >
       {children}
     </Tag>

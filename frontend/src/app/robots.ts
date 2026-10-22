@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/lib/site";
+import { absoluteUrl, isIndexable } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: { userAgent: "*", allow: "/" },
-    sitemap: `${site.url}/sitemap.xml`,
+    // Allow crawling so a preview's noindex meta tag can be read.
+    ...(isIndexable ? { sitemap: absoluteUrl("/sitemap.xml") } : {}),
   };
 }

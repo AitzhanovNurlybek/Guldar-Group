@@ -1,11 +1,15 @@
-import type { Metadata } from "next";
 import { Container, SectionHead } from "@/components/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { ClientLogos } from "@/components/ClientLogos";
 import { advantages, site } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "О компании" };
+export const metadata = pageMetadata(
+  "О строительной компании",
+  "GulDar Group — строительство, ремонт и обслуживание коммерческих объектов в Алматы с 2015 года. Направления работы, подход к проектам и реквизиты компании.",
+  "/o-kompanii",
+);
 
 const requisites = [
   ["Название", site.legalName],

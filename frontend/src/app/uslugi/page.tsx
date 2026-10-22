@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/Container";
 import { WhatsAppIcon } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
@@ -6,11 +5,13 @@ import { PriceCalculator } from "@/components/PriceCalculator";
 import { Reveal } from "@/components/Reveal";
 import { ServiceCard } from "@/components/ServiceCard";
 import { serviceGroups, waLink } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Услуги и цены",
-  description: "Ремонт под ключ, отделка, электромонтаж, сантехника, техобслуживание и металлоконструкции в Алматы. Цены от 10 000 ₸.",
-};
+export const metadata = pageMetadata(
+  "Строительные услуги и ремонт в Алматы",
+  "Строительство из металлоконструкций, ремонт под ключ, отделка, электромонтаж и обслуживание зданий в Алматы. Состав работ и предварительный расчёт стоимости.",
+  "/uslugi",
+);
 
 export default function ServicesPage() {
   return (
@@ -22,7 +23,7 @@ export default function ServicesPage() {
       />
       <Container className="space-y-16 pb-8">
         <Reveal>
-          <div className="panel-strong overflow-hidden rounded-3xl">
+          <div id="calculator" className="panel-strong scroll-mt-24 overflow-hidden rounded-3xl">
             <div className="hazard h-1.5" aria-hidden />
             <div className="p-6 sm:p-10">
               <h2 className="title">Калькулятор</h2>

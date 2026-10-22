@@ -1,0 +1,8 @@
+{
+  "bytes": 55512,
+  "textureSize": 256,
+  "parts": 16,
+  "merged": true,
+  "instancedParts": 2,
+  "lighting": "offline vertex lighting and shared baked AO texture; KHR_materials_unlit; no runtime lights/shadows"
+}

@@ -1,12 +1,16 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/Container";
 import { Icon, WhatsAppIcon, type IconName } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { WhatsAppBuilder } from "@/components/WhatsAppBuilder";
 import { site, waGreeting, waLink } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Контакты" };
+export const metadata = pageMetadata(
+  "Контакты строительной компании в Алматы",
+  `Обсудите строительство или ремонт с GulDar Group: ${site.phone}. Офис: ${site.address}. Телефон, WhatsApp, почта и адрес на карте.`,
+  "/kontakty",
+);
 
 const channels: { icon: IconName | "wa"; label: string; value: string; href: string; external?: boolean }[] = [
   { icon: "wa", label: "WhatsApp", value: "Быстрее всего", href: waLink(waGreeting), external: true },

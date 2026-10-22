@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/Icons";
+import { siteUrl } from "@/lib/site-url";
 
 // Данные компании в одном месте.
 // Источники: guldargroup.satu.kz, 2gis.kz, uchet.kz, листовка компании (на 2026-09).
@@ -18,8 +19,8 @@ export const site = {
   bin: "150240026941",
   gis: "https://2gis.kz/almaty/firm/70000001056080086",
   satu: "https://guldargroup.satu.kz",
-  // TODO: домен ещё не куплен — как купите, замените на настоящий (без / в конце)
-  url: "https://guldargroup.kz",
+  // Укажите подтверждённый домен в NEXT_PUBLIC_SITE_URL перед публикацией.
+  url: siteUrl,
 };
 
 export function waLink(text: string) {
