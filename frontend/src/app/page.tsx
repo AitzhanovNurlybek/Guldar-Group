@@ -8,9 +8,12 @@ import { IconTile, ServiceCard } from "@/components/ServiceCard";
 import { SceneProvider, SceneShowcase } from "@/components/scene/SceneBackground";
 import { AnimatedNumber } from "@/components/MotionEffects";
 import { HomeChoreography } from "@/components/HomeChoreography";
+import { ClientLogos } from "@/components/ClientLogos";
+import { Testimonials } from "@/components/Testimonials";
+import { RoomExplorer } from "@/components/scene/RoomExplorer";
 import { productGroups, projects, services, site, waGreeting, waLink } from "@/lib/site";
 
-const mainServices = ["pod-klyuch", "otdelka", "elektromontazh", "santehnika", "kto", "metallokonstrukcii"].map(
+const mainServices = ["pod-klyuch", "proektirovanie", "dizayn-proekt", "otdelka", "elektromontazh", "santehnika", "kto", "metallokonstrukcii"].map(
   (slug) => services.find((service) => service.slug === slug)!,
 );
 const places: { icon: IconName; title: string; text: string }[] = [
@@ -43,8 +46,8 @@ export default function Home() {
             <div className="hero-copy">
               <p className="eyebrow">Строительная компания · Алматы</p>
               {/* avoid-ai-design-ignore: SD5 */}
-              <h1 className="display hero-title mt-6">Ремонт офисов<br />и магазинов<br /><span className="accent-text">под ключ.</span><span className="hero-title-mask" aria-hidden="true"><span /><span /><span /></span></h1>
-              <p className="hero-lead">Готовим помещения к работе вашего бизнеса. От демонтажа и инженерных сетей до отделки и поставки материалов.</p>
+              <h1 className="display hero-title mt-6">Ремонт коммерческих объектов <span className="accent-text hero-title-ending">под ключ.</span></h1>
+              <p className="hero-lead">Проектирование, дизайн-проект и ремонт для вашего бизнеса. От первых планов до отделки, поставки материалов и готового помещения.</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a href="#kalkulyator" className="btn btn-accent">Рассчитать стоимость<Icon name="arrowUpRight" className="size-5" /></a>
                 <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost"><WhatsAppIcon className="size-5" />Обсудить проект</a>
@@ -53,6 +56,7 @@ export default function Home() {
                 {["Работаем по договору", "Смета до начала работ"].map((item) => <li key={item}><Icon name="check" className="size-4" />{item}</li>)}
                 <li><Icon name="check" className="size-4" />С <AnimatedNumber value={site.foundedYear} /> года</li>
               </ul>
+              <a href={`tel:${site.technicalTel}`} className="hero-technical-contact lg:hidden"><span>Технический специалист<strong>{site.technicalPhone}</strong></span><Icon name="phone" className="size-5" /></a>
             </div>
             <SceneShowcase />
           </div>
@@ -69,7 +73,14 @@ export default function Home() {
         </Container>
       </section>
 
-      <section id="uslugi" className="section-space scroll-mt-28">
+      <section className="section-space clients-section">
+        <Container>
+          <SectionHead eyebrow="Наши клиенты" title="Работаем с компаниями, которые вы знаете" />
+          <div className="mt-8"><ClientLogos size="lg" /></div>
+        </Container>
+      </section>
+
+      <section id="uslugi" className="section-space services-section light-section scroll-mt-28">
         <Container>
           <Reveal className="section-heading-row">
             <SectionHead eyebrow="01 / Чем можем помочь" title={<>Все работы.<br />Одна команда.</>} lead="Нужен полный ремонт или отдельный специалист? Подключимся на нужном этапе." />
@@ -101,17 +112,19 @@ export default function Home() {
 
       {projects.length > 0 && <section className="section-space"><Container><SectionHead eyebrow="Объекты" title="Наши работы" /><div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{projects.map((project) => <figure key={project.image} className="panel overflow-hidden rounded-2xl"><div className="relative aspect-[4/3]"><Image src={project.image} alt={project.title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" /></div><figcaption className="p-5"><p className="font-bold">{project.title}</p><p className="mt-1 text-sm text-fg-2">{project.place}</p></figcaption></figure>)}</div></Container></section>}
 
-      <section data-scene-finale className="section-space scene-finale">
+      <section data-scene-finale className="section-space scene-finale light-section">
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
             <Reveal><SectionHead eyebrow="После ремонта" title="Помещение готово. Мы остаёмся на связи." lead="Электрика, сантехника и мелкий ремонт нужны и после открытия. Возьмём техническое обслуживание на себя." /><div className="mt-7 flex flex-wrap gap-2">{(["bolt", "drop", "hammer"] as IconName[]).map((icon) => <IconTile key={icon} name={icon} />)}</div><Link href="/uslugi/kto" className="text-link mt-7">Об обслуживании помещений<Icon name="arrowUpRight" className="size-5" /></Link></Reveal>
-            <div className="scene-finale-window" aria-label="Результат ремонта в 3D-макете"><span>От чернового помещения до готового пространства</span><p>Иллюстрация этапов ремонта · 3D-макет</p></div>
+            <RoomExplorer />
           </div>
         </Container>
       </section>
 
+      <section className="section-space reviews-section"><Container><Testimonials /></Container></section>
+
       <section id="postavka" className="scroll-mt-28 pb-16 sm:pb-24">
-        <div className="materials-rail" aria-hidden="true"><div className="materials-track">{[...productGroups, ...productGroups].map((group, i) => <span key={`${group.title}-${i}`}>{group.title}<span className="material-joint" /></span>)}</div></div>
+        <div className="materials-rail" aria-hidden="true"><div className="materials-track">{productGroups.map((group) => <span key={group.title}>{group.title}<span className="material-joint" /></span>)}</div></div>
         <Container><Reveal className="supply-panel">
           <div><p className="eyebrow">Комплектуем ваш объект</p><h2 className="title mt-3">Материалы? Тоже к нам.</h2><p className="mt-4 max-w-lg text-fg-2">Подберём поставку под согласованный перечень работ.</p><Link href="/produkciya" className="text-link mt-6">Подробнее о поставках<Icon name="arrowUpRight" className="size-5" /></Link></div>
           <div className="grid gap-5 sm:grid-cols-2">{productGroups.map((group) => <div key={group.title} className="flex gap-3"><Icon name={group.icon} className="mt-1 size-6 shrink-0 text-safety" /><div><p className="font-bold">{group.title}</p><p className="mt-1 text-sm leading-relaxed text-fg-2">{group.text}</p></div></div>)}</div>

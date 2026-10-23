@@ -2,6 +2,7 @@ import { Container, SectionHead } from "@/components/Container";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { ClientLogos } from "@/components/ClientLogos";
+import { Testimonials } from "@/components/Testimonials";
 import { advantages, site } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
@@ -37,6 +38,8 @@ export default function AboutPage() {
             </div>
           </div>
         </Reveal>
+
+        <Testimonials />
 
         <section>
           <Reveal>

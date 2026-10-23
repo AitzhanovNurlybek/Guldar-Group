@@ -31,6 +31,7 @@ export function Footer() {
                 <a href={`mailto:${site.email}`} className="block hover:text-fg">
                   {site.email}
                 </a>
+                <a href={`tel:${site.technicalTel}`} className="technical-footer-link block py-2 font-bold text-fg"><span className="block text-xs font-medium text-fg-3">Технический специалист</span>{site.technicalPhone}</a>
                 <p>{site.address}</p>
                 <p>{site.hours}</p>
               </div>

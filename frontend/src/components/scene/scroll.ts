@@ -9,14 +9,14 @@ const renderers = new Set<Frame>();
 const sectionIds = ["home", "uslugi", "postavka", "o-kompanii", "obsudit"];
 let sectionTops: number[] = [];
 let finaleCenter = 0, sceneEnd = 1, pageEnd = 1;
-let dirty = true, running = false, lastY = -1;
+let dirty = true, running = false, lastY = -1, raf = 0, lastTime = 0;
 let observer: ResizeObserver | null = null;
-let scrollDriver: ((time: number) => void) | null = null;
-let ticker: (typeof import("gsap"))["gsap"]["ticker"] | null = null;
-let bootTimer: ReturnType<typeof setTimeout>;
-const readyListeners = new Set<() => void>();
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
-const invalidateLayout = () => { dirty = true; };
+
+function request() {
+  if (!raf && running && !document.hidden) raf = requestAnimationFrame(tick);
+}
+function invalidateLayout() { dirty = true; request(); }
 function measure() {
   dirty = false;
   state.vh = window.innerHeight || 1;
@@ -33,9 +33,9 @@ function measure() {
   });
   layoutListeners.forEach((listener) => listener());
 }
-function tick(time: number, milliseconds: number) {
-  if (document.hidden) return;
-  scrollDriver?.(time * 1000);
+function tick(milliseconds: number) {
+  raf = 0;
+  if (!running || document.hidden) return;
   state.y = Math.max(0, window.scrollY);
   const measured = dirty;
   if (dirty) measure();
@@ -51,38 +51,35 @@ function tick(time: number, milliseconds: number) {
     scrollListeners.forEach((listener) => listener(state));
     lastY = state.y;
   }
-  const delta = Math.min(milliseconds / 1000, 0.05);
-  frames.forEach((listener) => listener(time, delta));
-  renderers.forEach((listener) => listener(time, delta));
+  const delta = lastTime ? Math.min((milliseconds - lastTime) / 1000, 0.05) : 1 / 60;
+  lastTime = milliseconds;
+  frames.forEach((listener) => listener(milliseconds / 1000, delta));
+  renderers.forEach((listener) => listener(milliseconds / 1000, delta));
+  // Scroll-only pages sleep between browser events; renderers opt into frames.
+  if (frames.size || renderers.size) request();
+  else lastTime = 0;
 }
+function visibility() { lastTime = 0; request(); }
 function start() {
-  if (running) return;
-  running = true; dirty = true;
-  const boot = () => {
-    bootTimer = setTimeout(async () => {
-      const { gsap } = await import("gsap");
-      if (!running) return;
-      ticker = gsap.ticker;
-      ticker.fps(performanceBudget.targetFps); ticker.add(tick);
-      readyListeners.forEach((listener) => listener());
-    }, performanceBudget.motionDelayMs);
-  };
-  if (document.readyState === "complete") boot();
-  else window.addEventListener("load", boot, { once: true });
+  if (running) { request(); return; }
+  running = true; dirty = true; lastY = -1;
+  window.addEventListener("scroll", request, { passive: true });
   window.addEventListener("resize", invalidateLayout, { passive: true });
+  document.addEventListener("visibilitychange", visibility);
   observer = new ResizeObserver(invalidateLayout);
   observer.observe(document.body);
-  document.fonts.ready.then(invalidateLayout);
+  document.fonts.ready.then(() => { if (running) invalidateLayout(); });
+  request();
 }
 function stopIfUnused() {
-  if (scrollListeners.size || layoutListeners.size || frames.size || renderers.size || scrollDriver) return;
-  ticker?.remove(tick); ticker = null; running = false; clearTimeout(bootTimer);
-  window.removeEventListener("resize", invalidateLayout); observer?.disconnect(); observer = null;
+  if (scrollListeners.size || layoutListeners.size || frames.size || renderers.size) return;
+  running = false; cancelAnimationFrame(raf); raf = 0; lastTime = 0;
+  window.removeEventListener("scroll", request);
+  window.removeEventListener("resize", invalidateLayout);
+  document.removeEventListener("visibilitychange", visibility);
+  observer?.disconnect(); observer = null;
 }
 export const getScroll = () => state;
-export function subscribeScroll(listener: Listener) { scrollListeners.add(listener); start(); dirty = true; return () => { scrollListeners.delete(listener); stopIfUnused(); }; }
-export function subscribeLayout(listener: () => void) { layoutListeners.add(listener); start(); dirty = true; return () => { layoutListeners.delete(listener); stopIfUnused(); }; }
+export function subscribeScroll(listener: Listener) { scrollListeners.add(listener); dirty = true; start(); return () => { scrollListeners.delete(listener); stopIfUnused(); }; }
+export function subscribeLayout(listener: () => void) { layoutListeners.add(listener); dirty = true; start(); return () => { layoutListeners.delete(listener); stopIfUnused(); }; }
 export function subscribeFrame(listener: Frame, render = false) { const collection = render ? renderers : frames; collection.add(listener); start(); return () => { collection.delete(listener); stopIfUnused(); }; }
-export function setScrollDriver(driver: typeof scrollDriver) { scrollDriver = driver; if (driver) start(); else stopIfUnused(); }
-export function onMotionReady(listener: () => void) { readyListeners.add(listener); start(); if (ticker) listener(); return () => { readyListeners.delete(listener); }; }
-import { performanceBudget } from "./quality";

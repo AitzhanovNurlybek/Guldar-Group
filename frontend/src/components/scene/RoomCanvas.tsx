@@ -9,9 +9,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import * as THREE from "three";
 import { subscribeFrame } from "./scroll";
-import { sceneMotion } from "./motion-state";
+import { sceneMotion, subscribeScene } from "./motion-state";
 import { animationConfig } from "./animation-config";
-import { getQuality, quality, setQuality, useQuality } from "./quality";
+import { getQuality, performanceBudget, quality, setQuality, useQuality } from "./quality";
 
 declare global { interface Window { __guldarDiagnostics?: { quality: string; drawCalls: number; triangles: number; renderedFrames: number; renderFps: number; postprocessing: boolean; paused: boolean } } }
 const parts = [
@@ -105,18 +105,24 @@ function Driver({ active, onDegrade }: { active: boolean; onDegrade: () => void 
   const level = useQuality();
   useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, quality[level].maxDpr)); }, [level, setDpr]);
   useEffect(() => {
-    let revision = -1, px = 0, py = 0, warmFrames = 5, count = 0, windowFrames = 0, windowStart = 0;
+    if (!active) { if (window.__guldarDiagnostics) window.__guldarDiagnostics.paused = true; return; }
+    let revision = -1, px = 0, py = 0, warmFrames = 5, count = 0, windowFrames = 0, windowStart = 0, lastRender = 0;
+    let stopFrames: (() => void) | null = null;
     window.__guldarDiagnostics = { quality: getQuality(), drawCalls: 0, triangles: 0, renderedFrames: 0, renderFps: 0, postprocessing: false, paused: !active };
     const diagnostics = window.__guldarDiagnostics;
-    return subscribeFrame((time, delta) => {
+    const render = (time: number, delta: number) => {
       diagnostics.paused = !active || document.hidden;
       if (diagnostics.paused) return;
       const pointerChanged = Math.abs(px - sceneMotion.pointerX) + Math.abs(py - sceneMotion.pointerY) > 0.001;
       const dirty = revision !== sceneMotion.revision || pointerChanged || warmFrames > 0;
-      if (!dirty) { windowStart = time; windowFrames = 0; return; }
+      if (!dirty) { windowStart = time; windowFrames = 0; stopFrames?.(); stopFrames = null; return; }
+      const interval = 1 / performanceBudget.targetFps;
+      if (time - lastRender < interval) return;
+      lastRender = time - (time - lastRender) % interval;
       revision = sceneMotion.revision; px = sceneMotion.pointerX; py = sceneMotion.pointerY;
-      warmFrames--; count++; windowFrames++;
+      count++; windowFrames++;
       advance(time);
+      if (gl.info.render.triangles > 0) warmFrames = Math.max(0, warmFrames - 1);
       diagnostics.quality = getQuality(); diagnostics.drawCalls = gl.info.render.calls; diagnostics.triangles = gl.info.render.triangles; diagnostics.renderedFrames = count;
       if (!windowStart) windowStart = time;
       if (time - windowStart > 0.6) {
@@ -124,7 +130,11 @@ function Driver({ active, onDegrade }: { active: boolean; onDegrade: () => void 
         if (diagnostics.renderFps < 40 && delta > 0.024) onDegrade();
         windowStart = time; windowFrames = 0;
       }
-    }, true);
+    };
+    const wake = () => { if (!stopFrames) stopFrames = subscribeFrame(render, true); };
+    const unsubscribe = subscribeScene(wake);
+    wake();
+    return () => { unsubscribe(); stopFrames?.(); };
   }, [active, advance, gl, onDegrade]);
   return <PerformanceMonitor bounds={() => [42, 70]} onDecline={onDegrade} onFallback={onDegrade} flipflops={2} />;
 }

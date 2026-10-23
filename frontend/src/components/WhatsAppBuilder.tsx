@@ -5,6 +5,8 @@ import { Icon, WhatsAppIcon } from "./Icons";
 import { site, waLink } from "@/lib/site";
 
 const tasks = [
+  "Проектирование",
+  "Дизайн-проект",
   "Ремонт под ключ",
   "Косметический ремонт",
   "Электрика",
@@ -40,7 +42,7 @@ function Chips({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on ? null : o)}
-              className={`min-h-10 max-w-full rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
+              className={`min-h-11 max-w-full rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                 on
                   ? "border-safety bg-safety text-[#1a0e02]"
                   : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
@@ -95,6 +97,7 @@ export function WhatsAppBuilder() {
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
+            maxLength={2000}
             rows={3}
             placeholder="Например: заменить освещение в торговом зале, работать ночью"
             className="mt-2.5 w-full resize-none rounded-xl border border-line-strong bg-ink-900/60 px-4 py-3 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
@@ -105,7 +108,7 @@ export function WhatsAppBuilder() {
       {/* Превью: так сообщение увидит менеджер */}
       <div className="flex min-w-0 flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
         <div className="flex items-center gap-3 border-b border-line pb-4">
-          <span className="grid size-10 place-items-center rounded-full bg-[#25d366]/15 text-[#25d366]">
+          <span className="grid size-10 place-items-center rounded-full bg-[#e1f0e9] text-[#147854]">
             <WhatsAppIcon className="size-5" />
           </span>
           <div className="leading-tight">

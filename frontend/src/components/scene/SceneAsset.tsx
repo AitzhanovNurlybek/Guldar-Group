@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useCallback, useEffect, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { performanceBudget, quality, useQuality } from "./quality";
 import { sceneMotion, subscribeScene } from "./motion-state";
@@ -15,7 +15,9 @@ class SceneBoundary extends Component<{ children: ReactNode; onFailure: () => vo
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-export function SceneAsset({ active }: { active: boolean }) {
+export function SceneAsset() {
+  const container = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(true);
   const [load, setLoad] = useState(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -24,6 +26,12 @@ export function SceneAsset({ active }: { active: boolean }) {
   const staticScene = !quality[level].webgl;
   const onReady = useCallback(() => setReady(true), []);
   const onFailure = useCallback(() => { setFailed(true); setReady(false); }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting));
+    if (container.current) observer.observe(container.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (staticScene || !active) return;
@@ -44,16 +52,22 @@ export function SceneAsset({ active }: { active: boolean }) {
   useEffect(() => {
     if (!staticScene && !failed) return;
     let frame = 0;
-    return subscribeScene(() => {
-      if (!sceneMotion.manual) return;
-      const next = Math.round(sceneMotion.target * 143) + 1;
+    const sync = () => {
+      const next = sceneMotion.manual ? Math.round(sceneMotion.target * 143) + 1 : 0;
       if (next !== frame) { frame = next; setPosterFrame(next); }
-    });
+    };
+    sync();
+    return subscribeScene(sync);
   }, [staticScene, failed]);
 
-  const poster = posterFrame ? `/scene/d/${String(posterFrame).padStart(3, "0")}.avif` : "/scene/poster-d.webp";
-  return <div className="scene-asset" data-quality={level} data-rendered={ready && !failed && !staticScene}>
-    <div className="scene-poster"><Image src={poster} fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 80vw, 55vw" alt="" priority className="object-contain" /></div>
+  const frame = String(posterFrame).padStart(3, "0");
+  const poster = posterFrame ? `/scene/d/${frame}.avif` : "/scene/poster-d.webp";
+  const mobilePoster = posterFrame ? `/scene/m/${frame}.avif` : "/scene/poster-m.webp";
+  return <div ref={container} className="scene-asset" data-quality={level} data-rendered={ready && !failed && !staticScene}>
+    <picture className="scene-poster" style={{ position: "absolute" }}>
+      <source media="(max-width: 1023px)" srcSet={mobilePoster} />
+      <Image src={poster} fill unoptimized sizes="(max-width: 1023px) 100vw, 50vw" alt="" loading="eager" fetchPriority="high" className="object-contain" />
+    </picture>
     {load && !staticScene && !failed && <SceneBoundary onFailure={onFailure}><RoomCanvas active={active} onReady={onReady} onFailure={onFailure} /></SceneBoundary>}
   </div>;
 }

@@ -9,9 +9,9 @@ export const isIndexable = Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim()) &&
   process.env.SITE_NOINDEX !== "true" &&
   (!process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production");
 
-export const homeTitle = "Ремонт офисов и магазинов в Алматы — GulDar Group";
+export const homeTitle = "Ремонт коммерческих объектов в Алматы — GulDar Group";
 export const homeDescription =
-  "Строительная компания GulDar Group: ремонт офисов и магазинов под ключ в Алматы. Демонтаж, электрика, сантехника, отделка и поставка материалов. Смета и договор.";
+  "GulDar Group: ремонт коммерческих объектов под ключ в Алматы. Проектирование, дизайн-проект, инженерные работы, отделка и поставка материалов. Смета и договор.";
 
 export function absoluteUrl(path = "/") {
   return new URL(path, `${site.url}/`).toString();
@@ -41,7 +41,7 @@ export function pageMetadata(title: string, description: string, path: string): 
 }
 
 export const rootMetadata: Metadata = {
-  ...pageMetadata("Ремонт офисов и магазинов в Алматы", homeDescription, "/"),
+  ...pageMetadata("Ремонт коммерческих объектов в Алматы", homeDescription, "/"),
   metadataBase: new URL(site.url),
   title: { default: homeTitle, template: `%s — ${site.name}` },
   applicationName: site.name,
@@ -62,6 +62,7 @@ export const organizationJsonLd = {
   url: absoluteUrl(),
   description: homeDescription,
   telephone: site.phone.replace(/\s/g, ""),
+  contactPoint: { "@type": "ContactPoint", telephone: site.technicalTel, contactType: "technical support", availableLanguage: "Russian" },
   email: site.email,
   foundingDate: String(site.foundedYear),
   address: {

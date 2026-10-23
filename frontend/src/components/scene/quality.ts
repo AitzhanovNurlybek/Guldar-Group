@@ -7,10 +7,9 @@ export const quality = {
   medium: { webgl: true, maxDpr: 1.25, particles: 0, pointer: true },
   high: { webgl: true, maxDpr: 1.75, particles: 18, pointer: true },
 } as const;
-export const performanceBudget = { targetFps: 60, sampleFrames: 36, lowFps: 30, mediumFps: 46, motionDelayMs: 500, sceneDelayMs: 1600 };
+export const performanceBudget = { targetFps: 60, sceneDelayMs: 1600 };
 type Device = Navigator & { deviceMemory?: number; connection?: EventTarget & { saveData?: boolean } };
 let level: Quality = "low";
-let probed = false;
 const listeners = new Set<() => void>();
 export function setQuality(value: Quality) {
   if (level === value) return;
@@ -20,16 +19,10 @@ export function setQuality(value: Quality) {
 }
 export function detectQuality(): Quality {
   const device = navigator as Device;
-  if (window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 767px)").matches || device.connection?.saveData ||
+  if (window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 1023px), (pointer: coarse)").matches || device.connection?.saveData ||
       (device.deviceMemory !== undefined && device.deviceMemory <= 4) || (device.hardwareConcurrency > 0 && device.hardwareConcurrency <= 2)) return "low";
   return window.innerWidth < 1100 || (device.hardwareConcurrency > 0 && device.hardwareConcurrency < 8) ? "medium" : "high";
 }
-export function finishProbe(fps: number) {
-  probed = true;
-  const device = detectQuality();
-  setQuality(fps < performanceBudget.lowFps ? "low" : fps < performanceBudget.mediumFps && device === "high" ? "medium" : device);
-}
-export function resetQuality() { if (probed) setQuality(detectQuality()); }
 export const getQuality = () => level;
 const getServer = (): Quality => "low";
 export function subscribeQuality(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }

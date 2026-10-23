@@ -1,12 +1,9 @@
-/** Central controls: larger scrub/scrollDuration = slower; larger damping = faster settling. */
+/** Larger damping makes the model settle faster after a stage change. */
 export const animationConfig = {
-  scrollDuration: 1.15,
-  scrub: 0.8,
   damping: 7,
   roomRotation: (120 * Math.PI) / 180,
-  headerDuration: 0.72,
-  railDuration: 0.85,
-  revealDuration: 0.9,
+  headerDuration: 0.2,
+  revealDuration: 0.3,
 } as const;
 
 export const SCENE_STAGES = [

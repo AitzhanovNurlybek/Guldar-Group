@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { animationConfig } from "./scene/animation-config";
 import { Icon, WhatsAppIcon } from "./Icons";
 import { Logo, LogoMark } from "./Logo";
-import { getScroll, subscribeFrame, subscribeScroll } from "./scene/scroll";
+import { getScroll, subscribeScroll } from "./scene/scroll";
 import { nav, site, waGreeting, waLink } from "@/lib/site";
 
 const sectionAnchors = ["#home", "#uslugi", "#postavka", "#o-kompanii", "#obsudit"];
@@ -52,7 +52,6 @@ export function Sidebar() {
   const [railOpen, setRailOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLElement>(null);
-  const railMotion = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLButtonElement>(null);
   const scrollMode = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -63,23 +62,12 @@ export function Sidebar() {
     let previousY = window.scrollY;
     let directionOrigin = previousY;
     let direction = 0;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let railY = 0, railAngle = 0, targetY = 0, targetAngle = 0, quiet = 0;
-    const stopFrame = subscribeFrame((_, delta) => {
-      if (!railMotion.current || reduced.matches) return;
-      quiet += delta;
-      if (quiet > 0.12) { targetY = 0; targetAngle = 0; }
-      const amount = 1 - Math.exp(-6 * delta / animationConfig.railDuration);
-      railY += (targetY - railY) * amount; railAngle += (targetAngle - railAngle) * amount;
-      if (Math.abs(railY) + Math.abs(railAngle) > 0.01) railMotion.current.style.transform = `perspective(850px) translateY(${railY.toFixed(2)}px) rotateY(${railAngle.toFixed(2)}deg)`;
-      else railMotion.current.style.transform = "none";
-    });
     const sync = () => {
       const y = Math.max(0, window.scrollY);
       const delta = y - previousY;
       const nextDirection = Math.sign(delta);
       if (nextDirection && nextDirection !== direction) { directionOrigin = previousY; direction = nextDirection; }
-      if (y < 96) setHeaderHidden(false);
+      if (window.innerWidth < 1024 || y < 96) setHeaderHidden(false);
       else if (Math.abs(y - directionOrigin) > 12) setHeaderHidden(direction > 0 && y > 180 && !headerRef.current?.contains(document.activeElement));
       const next = scrollMode.current ? y > 48 : y > 144;
       if (next !== scrollMode.current) {
@@ -89,15 +77,11 @@ export function Sidebar() {
         if (!next) setRailOpen(false);
       }
       headerRef.current?.setAttribute("data-scrolled", String(y > 24));
-      if (railMotion.current && !reduced.matches) {
-        targetY = Math.max(-16, Math.min(16, -delta * 1.3));
-        targetAngle = Math.max(-10, Math.min(10, delta * 0.7)); quiet = 0;
-      }
       if (pathname === "/") setActiveSection(getScroll().activeSection);
       previousY = y;
     };
     const unsubscribe = subscribeScroll(sync);
-    return () => { unsubscribe(); stopFrame(); };
+    return unsubscribe;
   }, [pathname]);
 
   useEffect(() => {
@@ -156,9 +140,9 @@ export function Sidebar() {
           </div>
 
           <div className="hidden items-center gap-6 lg:flex">
-            <a href={`tel:+${site.whatsapp}`} className="hidden whitespace-nowrap text-sm font-extrabold text-fg transition-colors hover:text-signal xl:block">
-              <span className="mb-1 block text-[0.65rem] font-semibold tracking-[0.08em] text-fg-3 uppercase">Алматы · На связи</span>
-              {site.phone}
+            <a href={`tel:${site.technicalTel}`} className="hidden whitespace-nowrap text-sm font-extrabold text-fg transition-colors hover:text-signal xl:block">
+              <span className="mb-1 block text-[0.65rem] font-semibold text-fg-3">Технический специалист</span>
+              {site.technicalPhone}
             </a>
             <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="flex h-11 shrink-0 items-center justify-center gap-2.5 rounded-md bg-safety px-4 text-[0.8rem] font-extrabold text-[#21180f] transition-[background-color,transform] hover:brightness-95 active:translate-y-px xl:px-5">
               <WhatsAppIcon className="size-4" />
@@ -167,7 +151,7 @@ export function Sidebar() {
           </div>
 
           <div className="flex items-center gap-1 lg:hidden">
-            <a href={`tel:+${site.whatsapp}`} aria-label={`Позвонить: ${site.phone}`} className="grid size-11 place-items-center text-fg transition-colors hover:text-signal">
+            <a href={`tel:${site.technicalTel}`} aria-label={`Технический специалист: ${site.technicalPhone}`} className="grid size-11 place-items-center text-fg transition-colors hover:text-signal">
               <Icon name="phone" className="size-5" />
             </a>
             <button
@@ -177,16 +161,16 @@ export function Sidebar() {
               aria-haspopup="dialog"
               aria-controls="mobile-navigation"
               aria-expanded={open}
-              className="grid size-11 place-items-center rounded-md border border-line text-fg transition-colors hover:border-safety hover:text-signal"
+              className="mobile-menu-trigger flex h-11 items-center justify-center gap-2 rounded-md border border-line-strong px-3 text-sm font-bold text-fg transition-colors hover:border-safety hover:text-signal"
             >
-              <Icon name="menu" className="size-6" />
+              <Icon name="menu" className="size-5" /><span>Меню</span>
             </button>
           </div>
         </div>
       </header>
 
       <aside ref={railRef} data-visible={scrolled} data-expanded={railOpen} inert={!scrolled} aria-hidden={!scrolled} aria-label="Боковая навигация" className="scroll-rail">
-        <div ref={railMotion} className="rail-content rail-motion">
+        <div className="rail-content rail-motion">
           <Link href="/" prefetch={false} className="rail-link rail-brand" aria-label="GulDar Group — на главную" onClick={() => setRailOpen(false)}>
             <span className="rail-icon"><LogoMark className="size-9" /></span>
             <span className="rail-label font-extrabold">GulDar Group</span>
@@ -232,7 +216,7 @@ export function Sidebar() {
           const rect = event.currentTarget.getBoundingClientRect();
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeMenu();
         }}
-        className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-[min(100%,26rem)] max-w-none overflow-y-auto border-0 bg-ink-950 p-0 text-fg shadow-[-20px_0_80px_rgb(20_36_50/0.15)] backdrop:bg-[#102330]/90 lg:hidden"
+        className="mobile-navigation fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-[min(100%,26rem)] max-w-none overflow-y-auto overscroll-contain border-0 bg-ink-950 p-0 text-fg shadow-[-20px_0_80px_rgb(20_36_50/0.15)] backdrop:bg-[#102330]/90 lg:hidden"
       >
         <div className="flex min-h-full flex-col px-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div className="flex h-[88px] shrink-0 items-center justify-between gap-4 border-b border-line">
@@ -259,6 +243,7 @@ export function Sidebar() {
               {site.phone}
             </a>
             <p className="mt-2 text-xs text-fg-3">{site.hours}</p>
+            <a href={`tel:${site.technicalTel}`} className="mt-5 block py-2 text-base font-bold"><span className="mb-1 block text-xs font-medium text-fg-3">Технический специалист</span>{site.technicalPhone}</a>
           </div>
         </div>
       </dialog>
@@ -280,7 +265,7 @@ export function WhatsAppFab() {
       rel="noopener noreferrer"
       tabIndex={shown ? undefined : -1}
       aria-hidden={!shown}
-      className={`fixed right-4 bottom-4 z-30 flex min-h-12 items-center gap-2.5 rounded-md bg-safety px-5 py-3 text-sm font-extrabold text-[#21180f] shadow-[0_8px_30px_rgb(30_40_50/0.18)] transition-[translate,opacity] duration-300 motion-reduce:transition-none lg:hidden ${shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
+      className={`mobile-contact fixed right-4 bottom-4 z-30 flex min-h-12 items-center gap-2.5 rounded-md bg-safety px-5 py-3 text-sm font-extrabold text-[#21180f] shadow-[0_8px_30px_rgb(30_40_50/0.18)] transition-[translate,opacity] duration-200 motion-reduce:transition-none lg:hidden ${shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >
       <WhatsAppIcon className="size-5" />

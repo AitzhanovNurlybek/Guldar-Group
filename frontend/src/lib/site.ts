@@ -9,9 +9,11 @@ export const site = {
   name: "GulDar Group",
   legalName: "ТОО «GulDar Group»",
   motto: "Property · Building · Service",
-  tagline: "Ремонт офисов и коммерческих помещений в Алматы",
+  tagline: "Ремонт коммерческих объектов в Алматы",
   phone: "+7 778 681 29 31", // satu.kz + 2GIS
   whatsapp: "77786812931", // TODO: подтвердить, что WhatsApp на этом номере (2GIS: WhatsApp, Telegram)
+  technicalPhone: "+7 705 611 74 74",
+  technicalTel: "+77056117474",
   email: "guldargroup@bk.ru",
   address: "Алматы, ул. Толе би, 305, офис 27, 2 этаж", // 2GIS; на satu.kz — «Толе би, 305/1»
   hours: "Ежедневно, 9:00–20:00", // satu.kz; на spravker — пн–пт 9–18. TODO
@@ -151,6 +153,12 @@ export const serviceGroups: { title: string; lead: string; items: Service[] }[] 
         text: "Готовим проект и смету до начала работ, ведём объект до сдачи.",
         icon: "ruler",
       },
+      {
+        slug: "dizayn-proekt",
+        title: "Дизайн-проект",
+        text: "Планировка, визуализация интерьера, подбор отделки и рабочих решений для вашего бизнеса.",
+        icon: "brush",
+      },
     ],
   },
 ];
@@ -170,16 +178,18 @@ export const productGroups: { title: string; text: string; icon: IconName }[] = 
   { title: "Запорная арматура", text: "Краны, задвижки и клапаны для промышленных объектов.", icon: "valve" },
 ];
 
-// satu.kz → «Основные клиенты». TODO: подтвердить, что названия можно показывать на сайте
-// Логотипы лежат в public/clients/ (SVG/PNG/WebP на прозрачном фоне). Нет файла — показывается название.
-// TODO: evrika.webp взят из Википедии как «Eureka logo» — сверить с логотипом сети Evrika;
-// jusan.webp — логотип Jusan Bank, а клиент — Jusan Mobile. Лучше заменить на SVG от заказчика.
+// Логотипы предоставлены заказчиком; подготовленные версии сохраняют исходные цвета.
 export const clients: { name: string; logo: string }[] = [
-  { name: "Sulpak", logo: "/clients/sulpak.webp" },
-  { name: "Kcell", logo: "/clients/kcell.webp" },
-  { name: "Evrika", logo: "/clients/evrika.webp" },
-  { name: "Jusan Mobile", logo: "/clients/jusan.webp" },
-  { name: "ТД «Пассаж»", logo: "/clients/passazh.svg" },
+  { name: "Sulpak", logo: "/clients/optimized/sulpak.webp" },
+  { name: "Kcell", logo: "/clients/optimized/kcell.webp" },
+  { name: "ALSER", logo: "/clients/optimized/alser.webp" },
+  { name: "Mechta.kz", logo: "/clients/optimized/mechta.webp" },
+  { name: "Beeline", logo: "/clients/optimized/beeline.webp" },
+  { name: "Bank RBK", logo: "/clients/optimized/bank-rbk.webp" },
+  { name: "Qazaq Oil", logo: "/clients/optimized/qazaq-oil.webp" },
+  { name: "ATAMIRAS.S", logo: "/clients/optimized/atamiras.webp" },
+  { name: "Evrika", logo: "/clients/optimized/evrika.webp" },
+  { name: "Jusan", logo: "/clients/optimized/jusan.webp" },
 ];
 
 export const steps: { title: string; icon: IconName }[] = [

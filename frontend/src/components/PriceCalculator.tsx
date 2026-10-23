@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { subscribeFrame } from "./scene/scroll";
+import { useState } from "react";
 import { Icon, WhatsAppIcon } from "./Icons";
 import { calculator, waLink } from "@/lib/site";
 
@@ -11,26 +10,6 @@ const objectWorks = works.filter((w) => w.forObject);
 
 // Округляем до тысячи: точность до тенге в ориентире только сбивает с толку
 const money = (n: number) => `${(Math.max(0, Math.round(n / 1000)) * 1000).toLocaleString("ru-RU")} ₸`;
-
-// Число плавно «доезжает» до нового значения — без скачков при каждом движении ползунка
-function useTween(target: number) {
-  const [value, setValue] = useState(target);
-  const from = useRef({ value: target });
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const initial = from.current.value;
-    let elapsed = 0;
-    const stop = subscribeFrame((_, delta) => {
-      elapsed += delta;
-      const progress = reduced ? 1 : Math.min(elapsed / 0.45, 1);
-      from.current.value = initial + (target - initial) * (1 - (1 - progress) ** 3);
-      setValue(from.current.value);
-      if (progress === 1) stop();
-    });
-    return stop;
-  }, [target]);
-  return value;
-}
 
 function Chips<T extends string>({
   label,
@@ -55,7 +34,7 @@ function Chips<T extends string>({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(o.id)}
-              className={`min-h-10 max-w-full rounded-full border px-4 py-2 text-sm font-medium transition-[background-color,color,border-color,transform] duration-200 active:scale-[0.96] ${
+              className={`min-h-11 max-w-full rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                 on ? "border-safety bg-safety text-[#1a0e02]" : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
               }`}
             >
@@ -95,7 +74,7 @@ function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on
 }
 
 function Stepper({ value, onChange, min, max, suffix }: { value: number; onChange: (v: number) => void; min: number; max: number; suffix: string }) {
-  const btn = "grid size-10 place-items-center rounded-xl border border-line-strong bg-ink-900/60 text-lg font-bold transition-transform active:scale-95 disabled:opacity-40";
+  const btn = "grid size-11 place-items-center rounded-md border border-line-strong bg-ink-900/60 text-lg font-bold disabled:opacity-40";
   return (
     <div className="flex items-center gap-2">
       <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="Меньше">
@@ -135,9 +114,6 @@ export function PriceCalculator() {
   const base = lines.reduce((s, l) => s + l.sum, 0);
   const low = base * (rush ? 1 + urgent : 1);
   const high = low * spread;
-
-  const shownLow = useTween(low);
-  const shownHigh = useTween(high);
 
   const message = [
     "Здравствуйте! Посчитал ремонт на сайте GulDar Group:",
@@ -226,8 +202,8 @@ export function PriceCalculator() {
       <div className="flex min-w-0 flex-col rounded-3xl border border-line bg-ink-950/70 p-5 sm:p-6">
         <p className="text-sm font-semibold text-fg-2">Ориентировочно</p>
         <p className="mt-2 text-[clamp(1.5rem,2.4vw+0.8rem,2.8rem)] leading-tight font-extrabold tracking-[-0.03em] tabular-nums" aria-hidden="true">
-          {money(shownLow)}
-          <span className="block text-[0.55em] font-bold text-fg-2">до {money(shownHigh)}</span>
+          {money(low)}
+          <span className="block text-[0.55em] font-bold text-fg-2">до {money(high)}</span>
         </p>
         <p className="sr-only" aria-live="polite">Ориентировочная стоимость: от {money(low)} до {money(high)}.</p>
         {perArea && area > 0 && (
@@ -238,7 +214,7 @@ export function PriceCalculator() {
 
         <ul className="mt-5 space-y-2 border-t border-line pt-4 text-sm">
           {lines.map((l) => (
-            <li key={l.label} className="flex justify-between gap-4">
+            <li key={l.label} className="flex flex-wrap justify-between gap-x-4 gap-y-1">
               <span className="min-w-0 text-fg-2 [overflow-wrap:anywhere]">{l.label}</span>
               <span className="shrink-0 font-semibold tabular-nums">от {money(l.sum)}</span>
             </li>

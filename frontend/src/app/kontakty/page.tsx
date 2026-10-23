@@ -34,7 +34,7 @@ export default function ContactsPage() {
               >
                 <span
                   className={`grid size-11 place-items-center rounded-xl ${
-                    c.icon === "wa" ? "bg-[#25d366]/15 text-[#25d366]" : "bg-steel-600/40 text-ice-300"
+                    c.icon === "wa" ? "bg-[#e1f0e9] text-[#147854]" : "bg-steel-600/40 text-ice-300"
                   }`}
                 >
                   {c.icon === "wa" ? <WhatsAppIcon /> : <Icon name={c.icon} />}
@@ -44,6 +44,11 @@ export default function ContactsPage() {
               </a>
             </Reveal>
           ))}
+        </div>
+
+        <div className="technical-contact-panel">
+          <div><p className="eyebrow">Вопросы по объекту и работам</p><h2>Технический специалист</h2><p>Обсудите состояние помещения, проектирование и состав ремонта.</p></div>
+          <a href={`tel:${site.technicalTel}`} className="btn btn-primary"><Icon name="phone" className="size-5" />{site.technicalPhone}</a>
         </div>
 
         <Reveal>
