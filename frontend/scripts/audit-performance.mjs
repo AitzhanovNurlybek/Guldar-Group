@@ -1,17 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import lighthouse from 'lighthouse';
-import puppeteer from 'puppeteer-core';
+import { launchBrowser } from './browser.mjs';
 
 const label = process.argv[2] || 'after';
 const base = process.env.AUDIT_URL || 'http://localhost:3100';
 const out = path.resolve('reports', label);
 await fs.mkdir(out, { recursive: true });
-const browser = await puppeteer.launch({
-  executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  headless: true,
-  args: ['--no-first-run', '--no-default-browser-check'],
-});
+const browser = await launchBrowser();
 const result = { label, url: base, measuredAt: new Date().toISOString(), note: 'Local headless Chrome; scroll trace CPU 4x. FPS describes this machine, not a physical phone.' };
 try {
   const port = Number(new URL(browser.wsEndpoint()).port);
@@ -54,7 +50,7 @@ try {
     await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width === 375, hasTouch: width === 375 });
     await page.goto(base, { waitUntil: 'networkidle0' });
     await page.evaluate(() => document.fonts.ready);
-    if (width >= 768) {
+    if (width >= 1024) {
       try { await page.waitForFunction(() => document.querySelector('.scene-asset')?.getAttribute('data-rendered') === 'true' && Number(getComputedStyle(document.querySelector('.scene-poster')).opacity) < 0.05, { timeout: 12000 }); } catch {}
     }
     await page.screenshot({ path: path.join(out, `${width}x${height}.png`) });

@@ -125,6 +125,13 @@ export function Sidebar() {
     };
   }, [open]);
 
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const resetHeader = () => { if (!desktop.matches) setHeaderHidden(false); };
+    desktop.addEventListener("change", resetHeader);
+    return () => desktop.removeEventListener("change", resetHeader);
+  }, []);
+
   const closeMenu = () => setOpenedForPath(null);
 
   return (
@@ -179,7 +186,7 @@ export function Sidebar() {
             <span className="rail-icon"><Icon name={railOpen ? "sidebarClose" : "sidebarOpen"} /></span>
             <span className="rail-label">Свернуть меню</span>
           </button>
-          <nav id="rail-navigation" aria-label="Основное меню при прокрутке" className="rail-navigation" style={{ "--active-item": pathname === "/" ? activeSection : nav.findIndex((item) => item.href === pathname) } as CSSProperties}>
+          <nav id="rail-navigation" aria-label="Основное меню при прокрутке" className="rail-navigation" style={{ "--active-item": pathname === "/" ? activeSection : Math.max(0, nav.findIndex((item) => item.href !== "/" && pathname.startsWith(item.href))) } as CSSProperties}>
             <span className="rail-active-indicator" aria-hidden="true" />
             {nav.map((item, index) => {
               const active = pathname === "/" ? activeSection === index : item.href !== "/" && pathname.startsWith(item.href);
@@ -263,13 +270,14 @@ export function WhatsAppFab() {
       href={waLink(waGreeting)}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label="Обсудить проект в WhatsApp"
       tabIndex={shown ? undefined : -1}
       aria-hidden={!shown}
-      className={`mobile-contact fixed right-4 bottom-4 z-30 flex min-h-12 items-center gap-2.5 rounded-md bg-safety px-5 py-3 text-sm font-extrabold text-[#21180f] shadow-[0_8px_30px_rgb(30_40_50/0.18)] transition-[translate,opacity] duration-200 motion-reduce:transition-none lg:hidden ${shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
+      className={`mobile-contact fixed right-4 bottom-4 z-30 flex min-h-12 min-w-12 items-center justify-center gap-2.5 rounded-md bg-safety px-3 py-3 text-sm font-extrabold text-[#21180f] shadow-[0_8px_30px_rgb(30_40_50/0.18)] transition-[translate,opacity] duration-200 motion-reduce:transition-none sm:px-5 lg:hidden ${shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >
       <WhatsAppIcon className="size-5" />
-      Обсудить проект
+      <span className="hidden sm:inline">Обсудить проект</span>
     </a>
   );
 }

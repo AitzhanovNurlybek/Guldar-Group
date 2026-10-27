@@ -1,0 +1,49 @@
+name: Tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+        working-directory: backend
+      - run: python -m pytest -q
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://guldar-group.vercel.app
+          SITE_NOINDEX: 'true'
+      - name: Start production server
+        run: |
+          npm start -- --port 3100 > /tmp/guldar-next.log 2>&1 &
+          node --input-type=module -e 'for(let i=0;i<60;i++){try{if((await fetch("http://localhost:3100")).ok)process.exit(0)}catch{}await new Promise(r=>setTimeout(r,500))}process.exit(1)'
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-verification
+          path: frontend/reports/verification

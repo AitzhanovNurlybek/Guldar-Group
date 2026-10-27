@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "node scripts/test-browser.mjs",
     "model:build": "node scripts/build-room.mjs",
     "audit:performance": "node scripts/audit-performance.mjs after",
     "verify:interface": "node scripts/verify-interface.mjs"
@@ -14,7 +17,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
-    "next": "16.3.6",
+    "next": "16.4.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.186.1"
@@ -29,8 +32,9 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.3",
     "lighthouse": "^13.5.0",
+    "puppeteer-core": "^25.16.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

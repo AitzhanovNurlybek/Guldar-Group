@@ -56,11 +56,18 @@ Manrope и Montserrat подключены через `next/font/local` с `disp
 После production-запуска на порту 3100:
 
 ```powershell
-npm run audit:performance
+npm run lint
+npm run typecheck
+npm test
 npm run verify:interface
+node scripts/audit-performance.mjs current --lighthouse-only
 ```
 
-Скрипты используют установленный Chrome в headless-режиме. Для другого адреса задайте `AUDIT_URL`; для другого Chrome — `CHROME_PATH` (аудит). Lighthouse работает с стандартным мобильным профилем. Performance trace записывается при CPU 4×. Проверяются 375×812, 768×1024, 1440×900, 1920×1080 и 1440×650, reduced motion и отсутствие горизонтального скролла. Desktop-возможности в аудите принудительно выставлены в 8 ядер/8 ГБ, чтобы гарантированно проверить WebGL; это отмечено в JSON.
+Браузерные тесты используют установленный Chrome или Chromium; путь можно задать через `CHROME_PATH`, адрес сайта через `AUDIT_URL`. `verify:interface` и `test:e2e` запускают один набор проверок: 10 страниц на 14 ширинах 320–1920 px, меню и клавиатура, фотографии и PDF, калькулятор, WhatsApp, 3D и поворот телефона. `--quick` оставляет четыре ширины. Отчёт и скриншоты: `reports/verification/`.
+
+`npm test` проверяет выбор canonical-домена. Для тестов нужен Node.js 24. CI в `.github/workflows/tests.yml` запускает backend, lint, unit-тесты, production-сборку и браузерные проверки.
+
+Lighthouse измеряйте отдельно от браузерных тестов, чтобы они не конкурировали за CPU. Для полного аудита прокрутки есть `npm run audit:performance` с CPU 4×.
 
 Результаты, HTML Lighthouse, trace и снимки лежат в `reports/`, папка исключена из Git. Сводка и ограничения измерений — в [PERFORMANCE.md](PERFORMANCE.md). Визуальный контракт — [DESIGN.md](DESIGN.md).
 
@@ -70,4 +77,6 @@ npm run verify:interface
 
 Главная: `src/app/page.tsx`. Услуги: `src/lib/service-details.ts`. SEO и JSON-LD: `src/lib/seo.ts`. Для реальных кейсов добавьте фотографии в `public/photos` и записи в `projects` из `src/lib/site.ts`.
 
-Пока `NEXT_PUBLIC_SITE_URL` не задан, включён noindex. Перед публикацией укажите основной домен и пересоберите сайт; инструкция — [SEO.md](SEO.md), пример окружения — `.env.example`. Заявки открывают WhatsApp с готовым сообщением, которое посетитель отправляет самостоятельно.
+В Vercel Production canonical по умолчанию берётся из `VERCEL_PROJECT_PRODUCTION_URL`, затем из текущего адреса `guldar-group.vercel.app`. `NEXT_PUBLIC_SITE_URL` переопределяет его; случайно скопированный localhost на production заменяется публичным адресом. Локальная разработка и Vercel Preview получают noindex; для staging есть `SITE_NOINDEX=true`. Настройки домена применяются при сборке; подробнее в [SEO.md](SEO.md). Заявки открывают WhatsApp с готовым сообщением, которое посетитель отправляет самостоятельно.
+
+Готовые WebP/AVIF отдаются напрямую: встроенный `/_next/image` недоступен за текущим Vercel service rewrite. Логотипы и сканы уже сжаты в `public/`; новые фотографии сначала подготовьте для веба. Для логотипов, отзывов и сцены настроен кэш на час с revalidation.

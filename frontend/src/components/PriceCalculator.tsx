@@ -92,7 +92,8 @@ function Stepper({ value, onChange, min, max, suffix }: { value: number; onChang
 
 export function PriceCalculator() {
   const [workId, setWorkId] = useState("turnkey"); // «под ключ» — самый частый запрос
-  const [area, setArea] = useState(80);
+  const [areaInput, setAreaInput] = useState("80");
+  const area = Math.max(10, Math.min(5000, Number(areaInput) || 10));
   const [tasks, setTasks] = useState(3);
   const [electric, setElectric] = useState(false);
   const [demolition, setDemolition] = useState(false);
@@ -134,34 +135,42 @@ export function PriceCalculator() {
         {perArea ? (
           <div>
             <div className="flex items-baseline justify-between gap-4">
-              <label htmlFor="calc-area" className="text-sm font-semibold text-fg-2">
+              <label htmlFor="calc-area-input" className="text-sm font-semibold text-fg-2">
                 Площадь
               </label>
               <span className="flex items-baseline gap-1">
                 <input
+                  id="calc-area-input"
                   inputMode="numeric"
                   aria-label="Площадь, м²"
-                  value={area}
-                  onChange={(e) => setArea(Math.min(5000, Number(e.target.value.replace(/\D/g, "")) || 0))}
-                  className="w-20 rounded-lg border border-line-strong bg-ink-900/60 px-2 py-1 text-right text-lg font-extrabold focus:border-safety focus:outline-none"
+                  aria-describedby="calc-area-help"
+                  value={areaInput}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setAreaInput(digits ? String(Math.min(5000, Number(digits))) : "");
+                  }}
+                  onBlur={() => setAreaInput(String(area))}
+                  className="min-h-11 w-20 rounded-lg border border-line-strong bg-ink-900/60 px-2 py-1 text-right text-lg font-extrabold focus:border-safety focus:outline-none"
                 />
                 <span className="text-sm text-fg-2">м²</span>
               </span>
             </div>
             <input
               id="calc-area"
+              aria-label="Площадь ползунком, м²"
               type="range"
               min={10}
               max={1000}
               step={5}
               value={Math.min(area, 1000)}
-              onChange={(e) => setArea(Number(e.target.value))}
+              onChange={(e) => setAreaInput(e.target.value)}
               className="mt-3 w-full accent-[#f5871f]"
             />
             <div className="mt-1 flex justify-between text-xs text-fg-3">
               <span>10 м²</span>
               <span>1000 м²</span>
             </div>
+            <p id="calc-area-help" className="mt-2 text-xs text-fg-3">До 5000 м² можно ввести числом.</p>
           </div>
         ) : (
           <div>

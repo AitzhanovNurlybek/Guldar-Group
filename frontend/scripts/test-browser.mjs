@@ -1,0 +1,248 @@
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import { launchBrowser } from "./browser.mjs";
+
+const base = process.env.AUDIT_URL || "http://localhost:3100";
+const out = "reports/verification";
+const quick = process.argv.includes("--quick");
+const widths = quick ? [320, 390, 768, 1440] : [320, 360, 375, 390, 414, 430, 480, 640, 768, 820, 1024, 1280, 1440, 1920];
+const source = await fs.readFile("src/lib/service-details.ts", "utf8");
+const slugs = [...source.matchAll(/slug: "([a-z-]+)"/g)].map((match) => match[1]);
+const routes = ["/", "/uslugi", "/produkciya", "/o-kompanii", "/kontakty", ...slugs.map((slug) => `/uslugi/${slug}`)];
+const report = { url: base, measuredAt: new Date().toISOString(), checks: [], errors: [] };
+await fs.mkdir(out, { recursive: true });
+const browser = await launchBrowser();
+const check = (name, pass, details) => {
+  report.checks.push({ name, pass: Boolean(pass), details });
+  if (!pass) console.error("FAIL", name, details || "");
+};
+const test = async (name, fn) => {
+  try { await fn(); check(name, true); console.log("PASS", name); }
+  catch (error) { check(name, false, String(error)); }
+};
+
+async function loadImages(page) {
+  await page.evaluate(() => document.querySelectorAll("img").forEach((image) => { image.loading = "eager"; }));
+  await page.waitForFunction(() => [...document.images].every((image) => image.complete));
+  return page.evaluate(() => [...document.images].filter((image) => !image.naturalWidth).map((image) => image.currentSrc || image.src));
+}
+async function ready(page, route = "/") {
+  const response = await page.goto(`${base}${route}`, { waitUntil: "networkidle0" });
+  assert.ok([200, 304].includes(response.status()), `Unexpected HTTP ${response.status()} for ${route}`);
+  await page.evaluate(() => document.fonts.ready);
+}
+async function clickText(page, selector, text) {
+  const clicked = await page.$$eval(selector, (items, text) => {
+    const item = items.find((item) => item.textContent.trim() === text);
+    item?.click();
+    return Boolean(item);
+  }, text);
+  assert.ok(clicked, `Control not found: ${text}`);
+}
+async function typeInto(page, selector, value) {
+  await page.focus(selector);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("KeyA");
+  await page.keyboard.up("Control");
+  await page.keyboard.press("Backspace");
+  if (value) await page.keyboard.type(value);
+}
+
+try {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(20000);
+  page.on("pageerror", (error) => report.errors.push(String(error)));
+  await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+
+  await test("all routes fit mobile, tablet and desktop widths", async () => {
+    for (const width of widths) {
+      await page.setViewport({ width, height: 900, isMobile: width < 640, hasTouch: width < 1024 });
+      for (const route of routes) {
+        const response = await page.goto(`${base}${route}`, { waitUntil: "domcontentloaded" });
+        await page.evaluate(() => document.fonts.ready);
+        const geometry = await page.evaluate(() => ({
+          document: document.documentElement.scrollWidth,
+          viewport: document.documentElement.clientWidth,
+          offenders: [...document.querySelectorAll("main *, header > div")].filter((element) => {
+            const r = element.getBoundingClientRect();
+            return r.width > 0 && (r.left < -1 || r.right > innerWidth + 1) && !element.closest('[aria-hidden="true"]');
+          }).slice(0, 5).map((element) => ({ tag: element.tagName, class: element.className })),
+        }));
+        check(`${width}px ${route}: loads without overflow`, [200, 304].includes(response.status()) && geometry.document <= geometry.viewport && geometry.offenders.length === 0, { status: response.status(), ...geometry });
+      }
+      console.log(`Checked ${routes.length} routes at ${width}px`);
+    }
+    assert.ok(report.checks.every((item) => item.pass));
+  });
+
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+  await ready(page);
+  await test("all client logos and review images load directly", async () => {
+    assert.deepEqual(await loadImages(page), []);
+    assert.equal(await page.$$eval(".client-logos img", (images) => images.length), 10);
+    assert.ok(await page.$$eval("img", (images) => images.every((image) => !image.currentSrc.includes("/_next/image"))));
+    await (await page.$(".clients-section")).screenshot({ path: `${out}/clients-390.png` });
+  });
+  await test("original review PDFs are accessible", async () => {
+    const results = await page.$$eval('a[href$=".pdf"]', async (links) => Promise.all([...new Set(links.map((link) => link.href))].map(async (url) => {
+      const response = await fetch(url);
+      return response.ok && response.headers.get("content-type")?.includes("pdf");
+    })));
+    assert.equal(results.length, 3);
+    assert.ok(results.every(Boolean));
+  });
+  await test("home section anchors and service links have destinations", async () => {
+    assert.ok(await page.$$eval('a[href^="#"]', (links) => links.every((link) => link.hash.length < 2 || document.getElementById(decodeURIComponent(link.hash.slice(1))))));
+    assert.equal(await page.$$eval(".services-grid a", (links) => links.length), 8);
+    assert.equal(await page.$$eval(".services-grid a[href^='/uslugi/']", (links) => links.length), slugs.length);
+  });
+
+  await ready(page);
+  await test("mobile menu traps focus, closes with Escape and restores scrolling", async () => {
+    await page.locator('header button[aria-controls="mobile-navigation"]').click();
+    assert.ok(await page.$eval("dialog", (dialog) => dialog.open));
+    for (let i = 0; i < 15; i++) {
+      await page.keyboard.press("Tab");
+      assert.ok(await page.evaluate(() => document.activeElement === document.body || document.querySelector("dialog").contains(document.activeElement)));
+    }
+    await page.keyboard.press("Escape");
+    assert.ok(await page.$eval("dialog", (dialog) => !dialog.open));
+    assert.ok(await page.evaluate(() => getComputedStyle(document.documentElement).overflow !== "hidden"));
+    assert.equal(await page.evaluate(() => document.activeElement.getAttribute("aria-controls")), "mobile-navigation");
+  });
+  await test("changing to desktop closes the mobile dialog", async () => {
+    await page.locator('header button[aria-controls="mobile-navigation"]').click();
+    await page.setViewport({ width: 1280, height: 900 });
+    await page.waitForFunction(() => !document.querySelector("dialog").open);
+    assert.ok(await page.evaluate(() => getComputedStyle(document.documentElement).overflow !== "hidden"));
+  });
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+  await ready(page);
+  await test("mobile scene changes stages without WebGL or scroll interception", async () => {
+    await page.locator(".scene-stage-button:last-child").click();
+    await page.waitForFunction(() => {
+      const image = document.querySelector(".scene-poster img");
+      return image.complete && image.naturalWidth > 0 && image.currentSrc.endsWith("/m/144.avif");
+    });
+    await page.evaluate(() => scrollTo(0, 1500));
+    assert.equal(await page.$eval(".scene-stage-button:last-child", (button) => button.getAttribute("aria-pressed")), "true");
+    assert.equal(await page.$$eval("canvas", (items) => items.length), 0);
+    assert.ok(await page.$eval("#scene-progress", (input) => input.getAttribute("aria-valuetext").includes("Готовое пространство")));
+  });
+
+  await test("calculator handles empty, minimum, maximum and normal area", async () => {
+    await page.$eval("#kalkulyator", (section) => section.scrollIntoView());
+    await page.waitForSelector("#calc-area-input");
+    await typeInto(page, "#calc-area-input", "");
+    await page.keyboard.press("Tab");
+    await page.waitForFunction(() => document.querySelector("#calc-area-input").value === "10");
+    assert.equal(await page.$eval("#calc-area-input", (input) => input.value), "10");
+    await typeInto(page, "#calc-area-input", "99999");
+    await page.keyboard.press("Tab");
+    await page.waitForFunction(() => document.querySelector("#calc-area-input").value === "5000");
+    assert.equal(await page.$eval("#calc-area-input", (input) => input.value), "5000");
+    await typeInto(page, "#calc-area-input", "120");
+    await page.keyboard.press("Tab");
+    await page.waitForFunction(() => document.querySelector("#calc-area-input").value === "120");
+    const text = await page.$eval(".deferred-calculator a[href*='wa.me']", (link) => new URL(link.href).searchParams.get("text"));
+    assert.ok(text.includes("120 м²"));
+    assert.ok(text.replace(/\s/g, "").includes("7200000"));
+    assert.ok(!text.includes("NaN"));
+    await clickText(page, ".deferred-calculator button[aria-pressed]", "Мелкий ремонт");
+    assert.equal(await page.$$("#calc-area-input").then((items) => items.length), 0);
+    await clickText(page, ".deferred-calculator button[aria-pressed]", "Ремонт под ключ");
+    assert.equal(await page.$eval("#calc-area-input", (input) => input.value), "120");
+  });
+  await test("mobile primary controls have at least 44px tap targets", async () => {
+    const controls = await page.$$eval(".mobile-menu-trigger, .scene-stage-button, #calc-area-input", (items) => items.map((item) => {
+      const rect = item.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    }));
+    assert.ok(controls.every((rect) => rect.width >= 44 && rect.height >= 44));
+  });
+  await test("WhatsApp builder preserves choices and encodes comments", async () => {
+    await page.$eval("#obsudit", (section) => section.scrollIntoView());
+    await page.waitForSelector(".deferred-whatsapp textarea");
+    await clickText(page, ".deferred-whatsapp button", "Проектирование");
+    await clickText(page, ".deferred-whatsapp button", "Офис");
+    await typeInto(page, ".deferred-whatsapp input", "120");
+    const note = "Ночью: свет & розетки <офис>";
+    await typeInto(page, ".deferred-whatsapp textarea", note);
+    const href = await page.$eval(".deferred-whatsapp a[href*='wa.me']", (link) => link.href);
+    const url = new URL(href);
+    assert.equal(url.pathname, "/77786812931");
+    assert.ok(url.searchParams.get("text").includes(note));
+    assert.ok(url.searchParams.get("text").includes("Задача: проектирование"));
+    assert.ok(url.searchParams.get("text").includes("Объект: офис"));
+    assert.ok(await page.$eval(".mobile-contact", (link) => getComputedStyle(link).visibility === "hidden"));
+  });
+
+  await page.setViewport({ width: 1440, height: 1000, isMobile: false, hasTouch: false });
+  await ready(page);
+  await test("explicit 3D viewer loads, rotates, closes and restores focus", async () => {
+    assert.equal(await page.$$eval("canvas", (items) => items.length), 0);
+    await page.locator(".room-enable").click();
+    await page.waitForSelector(".room-orbit-canvas canvas", { timeout: 45000 });
+    await page.waitForFunction(() => !document.querySelector(".room-loading"), { timeout: 45000 });
+    const before = await page.$eval(".room-orbit-canvas canvas", (canvas) => canvas.dataset.view);
+    await page.locator('button[aria-label="Повернуть макет вправо"]').click();
+    await page.waitForFunction((before) => document.querySelector(".room-orbit-canvas canvas")?.dataset.view !== before, {}, before);
+    await (await page.$(".room-explorer")).screenshot({ path: `${out}/viewer-1440.png` });
+    await page.locator(".room-controls .text-link").click();
+    assert.equal(await page.$$eval(".room-orbit-canvas canvas", (items) => items.length), 0);
+    await page.waitForFunction(() => document.activeElement?.classList.contains("room-enable"));
+  });
+
+  await test("header recovers when desktop scroll is followed by phone resize", async () => {
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.waitForFunction(() => scrollY === 0 && document.querySelector("header").dataset.hidden === "false");
+    await page.evaluate(() => scrollTo(0, 600));
+    await page.waitForFunction(() => document.querySelector("header").dataset.hidden === "true");
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await page.waitForFunction(() => document.querySelector("header").dataset.hidden === "false");
+  });
+  await test("landscape phone menu fits the viewport and remains scrollable", async () => {
+    await page.setViewport({ width: 844, height: 390, isMobile: true, hasTouch: true });
+    await ready(page);
+    await page.locator('header button[aria-controls="mobile-navigation"]').click();
+    const geometry = await page.$eval("dialog", (dialog) => ({ height: dialog.clientHeight, width: dialog.clientWidth, scroll: dialog.scrollHeight, overflow: getComputedStyle(dialog).overflowY }));
+    assert.ok(geometry.height <= 390 && geometry.width <= 844);
+    assert.ok(geometry.scroll > geometry.height && geometry.overflow === "auto");
+    await page.keyboard.press("Escape");
+  });
+
+  for (const width of [320, 390, 430, 768, 1440]) {
+    await page.setViewport({ width, height: 900, isMobile: width < 640, hasTouch: width < 1024 });
+    await ready(page);
+    await page.screenshot({ path: `${out}/home-${width}.png` });
+  }
+  await test("404 route returns HTTP 404", async () => {
+    const response = await page.goto(`${base}/uslugi/not-a-real-service`, { waitUntil: "networkidle0" });
+    assert.equal(response.status(), 404);
+  });
+  check("no uncaught browser errors", report.errors.length === 0, report.errors);
+
+  await test("deferred widget reports a network error and recovers on retry", async () => {
+    const offlinePage = await browser.newPage();
+    let offline = true;
+    try {
+      await offlinePage.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+      await ready(offlinePage);
+      await offlinePage.setRequestInterception(true);
+      offlinePage.on("request", (request) => offline && request.url().includes(".js") ? request.abort() : request.continue());
+      await offlinePage.$eval("#kalkulyator", (section) => section.scrollIntoView());
+      await offlinePage.waitForSelector(".deferred-calculator [role='alert']");
+      assert.equal(await offlinePage.$eval(".deferred-calculator", (element) => element.getAttribute("aria-busy")), "false");
+      offline = false;
+      await offlinePage.locator(".deferred-calculator button").click();
+      await offlinePage.waitForSelector("#calc-area-input");
+      assert.equal(await offlinePage.$eval(".deferred-calculator", (element) => element.getAttribute("aria-busy")), "false");
+    } finally { await offlinePage.close(); }
+  });
+} finally {
+  await fs.writeFile(`${out}/interface.json`, JSON.stringify(report, null, 2));
+  await browser.close();
+}
+const failed = report.checks.filter((check) => !check.pass);
+console.log(`${report.checks.length - failed.length}/${report.checks.length} checks passed; report: ${out}/interface.json`);
+if (failed.length) process.exitCode = 1;

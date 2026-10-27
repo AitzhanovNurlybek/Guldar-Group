@@ -8,7 +8,7 @@ import { bodyCyrillic, bodyLatin, displayCyrillic } from "./fonts";
 import "./globals.css";
 
 export const metadata = rootMetadata;
-export const viewport: Viewport = { themeColor: "#f6f8f7" };
+export const viewport: Viewport = { themeColor: "#f6f8f7", viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

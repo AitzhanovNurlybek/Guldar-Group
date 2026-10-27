@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "GulDar Group API"
     API_PREFIX: str = "/api"
     ENVIRONMENT: str = "development"
+    VERCEL: bool = False
 
     # Через запятую: http://localhost:3000,https://guldar.kz
     CORS_ORIGINS: str = "http://localhost:3000"

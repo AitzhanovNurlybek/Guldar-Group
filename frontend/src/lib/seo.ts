@@ -4,8 +4,7 @@ import { site } from "@/lib/site";
 const hostname = new URL(site.url).hostname;
 const localHostname = ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
 
-export const isIndexable = Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim()) &&
-  !localHostname &&
+export const isIndexable = !localHostname &&
   process.env.SITE_NOINDEX !== "true" &&
   (!process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production");
 
