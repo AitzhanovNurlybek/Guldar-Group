@@ -25,11 +25,11 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
 function Wordmark({ compact }: { compact?: boolean }) {
   return (
     <span className="block leading-none whitespace-nowrap">
-      <span className="logo-wordmark-title block text-[1.12rem] font-extrabold tracking-[-0.02em] text-fg">
+      <span className="logo-wordmark-title block text-[18px] font-extrabold tracking-[-0.02em] text-fg">
         GulDar <span className="font-semibold text-ice-300">Group</span>
       </span>
       {!compact && (
-        <span className="mt-1.5 block text-[0.5rem] font-bold tracking-[0.08em] text-signal uppercase">Строительная компания</span>
+        <span className="mt-[6px] block text-[8px] font-bold tracking-[0.08em] text-signal uppercase">Строительная компания</span>
       )}
     </span>
   );
@@ -38,8 +38,8 @@ function Wordmark({ compact }: { compact?: boolean }) {
 export function Logo({ compact = false, wordmarkOnly = false }: { compact?: boolean; wordmarkOnly?: boolean }) {
   if (wordmarkOnly) return <Wordmark />;
   return (
-    <span className="flex items-center gap-2.5">
-      <LogoMark className="size-10 shrink-0" />
+    <span className="flex items-center gap-[10px]">
+      <LogoMark className="size-[40px] shrink-0" />
       <Wordmark compact={compact} />
     </span>
   );

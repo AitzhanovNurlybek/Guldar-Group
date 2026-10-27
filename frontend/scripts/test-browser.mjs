@@ -77,6 +77,13 @@ try {
 
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
   await ready(page);
+  await test("interior concept is labelled and real evidence stays accessible", async () => {
+    assert.ok(await page.$eval(".hero-interior figcaption", (caption) => caption.textContent.includes("AI-визуализация")));
+    assert.ok(await page.$eval(".hero-interior img", (image) => image.alt.includes("Визуализация")));
+    assert.equal(await page.$$eval(".agreement-list > div", (items) => items.length), 3);
+    assert.equal(await page.$$eval(".testimonial", (items) => items.length), 3);
+    assert.ok(await page.$('a[href="/o-kompanii#rekvizity"]'));
+  });
   await test("all client logos and review images load directly", async () => {
     assert.deepEqual(await loadImages(page), []);
     assert.equal(await page.$$eval(".client-logos img", (images) => images.length), 10);
@@ -163,6 +170,7 @@ try {
   await test("WhatsApp builder preserves choices and encodes comments", async () => {
     await page.$eval("#obsudit", (section) => section.scrollIntoView());
     await page.waitForSelector(".deferred-whatsapp textarea");
+    assert.ok(await page.$eval(".builder-reset", (button) => button.disabled));
     await clickText(page, ".deferred-whatsapp button", "Проектирование");
     await clickText(page, ".deferred-whatsapp button", "Офис");
     await typeInto(page, ".deferred-whatsapp input", "120");
@@ -175,6 +183,15 @@ try {
     assert.ok(url.searchParams.get("text").includes("Задача: проектирование"));
     assert.ok(url.searchParams.get("text").includes("Объект: офис"));
     assert.ok(await page.$eval(".mobile-contact", (link) => getComputedStyle(link).visibility === "hidden"));
+  });
+  await test("WhatsApp builder resets details and keeps a usable empty message", async () => {
+    assert.ok(await page.$eval(".builder-reset", (button) => !button.disabled));
+    await page.locator(".builder-reset").click();
+    await page.waitForFunction(() => document.querySelector(".builder-reset").disabled);
+    assert.ok(await page.$$eval(".deferred-whatsapp [aria-pressed]", (buttons) => buttons.every((button) => button.getAttribute("aria-pressed") === "false")));
+    assert.ok(await page.$$eval(".deferred-whatsapp input, .deferred-whatsapp textarea", (fields) => fields.every((field) => field.value === "")));
+    const message = await page.$eval(".deferred-whatsapp a[href*='wa.me']", (link) => new URL(link.href).searchParams.get("text"));
+    assert.equal(message, "Здравствуйте! Пишу с сайта GulDar Group.");
   });
 
   await page.setViewport({ width: 1440, height: 1000, isMobile: false, hasTouch: false });
@@ -195,7 +212,7 @@ try {
 
   await test("header recovers when desktop scroll is followed by phone resize", async () => {
     await page.evaluate(() => scrollTo(0, 0));
-    await page.waitForFunction(() => scrollY === 0 && document.querySelector("header").dataset.hidden === "false");
+    await page.waitForFunction(() => scrollY === 0 && document.querySelector("header").dataset.hidden === "false" && document.querySelector("header").dataset.scrolled === "false");
     await page.evaluate(() => scrollTo(0, 600));
     await page.waitForFunction(() => document.querySelector("header").dataset.hidden === "true");
     await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
@@ -209,6 +226,19 @@ try {
     assert.ok(geometry.height <= 390 && geometry.width <= 844);
     assert.ok(geometry.scroll > geometry.height && geometry.overflow === "auto");
     await page.keyboard.press("Escape");
+  });
+  await test("home and contacts reflow with 200 percent text on a phone", async () => {
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    for (const route of ["/", "/kontakty"]) {
+      await ready(page, route);
+      await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `Text overflows ${route} at 200%`);
+      assert.ok(await page.$eval(".mobile-menu-trigger", (button) => button.getBoundingClientRect().right <= document.documentElement.clientWidth));
+      await page.locator(".mobile-menu-trigger").click();
+      assert.ok(await page.$eval("dialog", (dialog) => dialog.open));
+      await page.keyboard.press("Escape");
+    }
   });
 
   for (const width of [320, 390, 430, 768, 1440]) {

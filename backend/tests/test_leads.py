@@ -4,7 +4,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_engine
+from app.core.database import get_engine, reset_engine_cache
 from app.models.lead import Lead
 
 PAYLOAD = {"name": "Тест", "phone": "+77000000000", "message": "Ремонт офиса"}
@@ -29,7 +29,7 @@ def test_ids_are_unique_and_records_survive_reconnection(client, database):
     second = client.post("/api/leads", json={**PAYLOAD, "name": "Второй клиент"}).json()
     assert first["id"] != second["id"]
     database.dispose()
-    get_engine.cache_clear()
+    reset_engine_cache()
     reopened = get_engine()
     try:
         with Session(reopened) as session:
@@ -86,7 +86,7 @@ def test_commit_failure_rolls_back_and_never_reports_success(client, database, m
 
 @pytest.mark.parametrize("environment,vercel", [("production", False), ("development", True)])
 def test_production_never_accepts_a_lead_into_ephemeral_sqlite(client, monkeypatch, environment, vercel):
-    get_engine.cache_clear()
+    reset_engine_cache()
     monkeypatch.setattr(settings, "ENVIRONMENT", environment)
     monkeypatch.setattr(settings, "VERCEL", vercel)
     assert client.post("/api/leads", json=PAYLOAD).status_code == 503

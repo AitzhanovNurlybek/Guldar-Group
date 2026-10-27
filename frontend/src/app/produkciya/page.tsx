@@ -21,7 +21,7 @@ export default function ProductsPage() {
         lead="Пришлите список — посчитаем цену и сроки."
       />
       <Container className="space-y-10 pb-8">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="product-catalog grid gap-4 sm:grid-cols-2">
           {productGroups.map((p, i) => (
             <Reveal key={p.title} delay={(i % 2) * 70}>
               <article className="panel lift flex h-full flex-col rounded-2xl p-6 sm:p-8">

@@ -6,6 +6,7 @@ import { MotionEffects } from "@/components/MotionEffects";
 import { rootMetadata, organizationJsonLd, serializeJsonLd } from "@/lib/seo";
 import { bodyCyrillic, bodyLatin, displayCyrillic } from "./fonts";
 import "./globals.css";
+import "./editorial.css";
 
 export const metadata = rootMetadata;
 export const viewport: Viewport = { themeColor: "#f6f8f7", viewportFit: "cover" };

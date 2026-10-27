@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -13,6 +14,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000"
 
     DATABASE_URL: str = "sqlite:///./guldar.db"
+    DATABASE_CONNECT_TIMEOUT: int = Field(default=5, ge=1, le=30)
+    DATABASE_POOL_TIMEOUT: int = Field(default=5, ge=1, le=30)
     SECRET_KEY: str = "change-me"
 
     # Уведомления о заявках

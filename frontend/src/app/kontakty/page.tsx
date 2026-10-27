@@ -24,7 +24,7 @@ export default function ContactsPage() {
     <>
       <PageHeader eyebrow="Контакты" title="Давайте обсудим" lead={site.hours} />
       <Container className="space-y-6 pb-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="contact-channels grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {channels.map((c, i) => (
             <Reveal key={c.label} delay={i * 60}>
               <a
@@ -54,7 +54,7 @@ export default function ContactsPage() {
         <Reveal>
           <div className="panel-strong overflow-hidden rounded-3xl p-6 sm:p-10">
             <h2 className="title">Расскажите об объекте</h2>
-            <p className="mt-3 max-w-xl text-lg text-fg-2">Отметьте пару вариантов — сообщение соберётся само.</p>
+            <p className="mt-3 max-w-xl text-lg text-fg-2">Выберите только известные детали. Готовое сообщение можно отправить в WhatsApp.</p>
             <div className="mt-8">
               <WhatsAppBuilder />
             </div>

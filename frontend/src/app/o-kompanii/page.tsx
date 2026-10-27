@@ -45,10 +45,10 @@ export default function AboutPage() {
           <Reveal>
             <SectionHead eyebrow="Как работаем" title="Договор, гарантия и один ответственный" />
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <div className="company-principles mt-10">
             {advantages.map((a, i) => (
               <Reveal key={a.title} delay={(i % 2) * 70}>
-                <div className="panel h-full rounded-2xl border-l-2 border-l-safety p-6">
+                <div>
                   <h3 className="text-xl leading-tight font-bold">{a.title}</h3>
                   <p className="mt-2 leading-relaxed text-fg-2">{a.text}</p>
                 </div>
@@ -57,12 +57,12 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section>
+        <section id="rekvizity" className="scroll-mt-28">
           <Reveal>
             <SectionHead eyebrow="Реквизиты" title="Данные компании" />
           </Reveal>
           <Reveal>
-            <dl className="panel mt-8 divide-y divide-line rounded-3xl px-6">
+            <dl className="company-requisites mt-8 divide-y divide-line">
               {requisites.map(([k, v]) => (
                 <div key={k} className="grid gap-1 py-4 sm:grid-cols-[12rem_1fr]">
                   <dt className="text-sm text-fg-3">{k}</dt>

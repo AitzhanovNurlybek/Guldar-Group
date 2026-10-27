@@ -5,7 +5,7 @@ import { Icon } from "./Icons";
 
 export function Testimonials() {
   return <section id="otzyvy" className="testimonials-section scroll-mt-28" aria-label="Отзывы заказчиков">
-    <SectionHead eyebrow="Отзывы заказчиков" title="За нашей работой — реальные объекты" lead="Письма от компаний, для которых мы выполняли ремонт. Откройте документ, чтобы прочитать отзыв целиком." />
+    <SectionHead eyebrow="Опыт в документах" title="Рекомендации в оригинале." lead="Sulpak, «Мастершина» и школа «ДАНА» о работе с GulDar Group. Каждый отзыв можно открыть и прочитать целиком." />
     <div className="testimonials-list">
       {testimonials.map((review) => <article key={review.id} className="testimonial">
         <a className="testimonial-document" href={`/reviews/${review.id}.pdf`} target="_blank" rel="noopener noreferrer" aria-label={`Открыть оригинал отзыва: ${review.company}, PDF`}>

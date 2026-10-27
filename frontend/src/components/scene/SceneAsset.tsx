@@ -66,7 +66,7 @@ export function SceneAsset() {
   return <div ref={container} className="scene-asset" data-quality={level} data-rendered={ready && !failed && !staticScene}>
     <picture className="scene-poster" style={{ position: "absolute" }}>
       <source media="(max-width: 1023px)" srcSet={mobilePoster} />
-      <Image src={poster} fill unoptimized sizes="(max-width: 1023px) 100vw, 50vw" alt="" loading="eager" fetchPriority="high" className="object-contain" />
+      <Image src={poster} fill unoptimized sizes="(max-width: 1023px) 100vw, 50vw" alt="" loading="lazy" className="object-contain" />
     </picture>
     {load && !staticScene && !failed && <SceneBoundary onFailure={onFailure}><RoomCanvas active={active} onReady={onReady} onFailure={onFailure} /></SceneBoundary>}
   </div>;

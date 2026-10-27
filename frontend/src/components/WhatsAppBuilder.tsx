@@ -63,6 +63,8 @@ export function WhatsAppBuilder() {
   const [term, setTerm] = useState<string | null>(null);
   const [area, setArea] = useState("");
   const [note, setNote] = useState("");
+  const hasDetails = Boolean(task || place || term || area || note);
+  const reset = () => { setTask(null); setPlace(null); setTerm(null); setArea(""); setNote(""); };
 
   const lines = [
     "Здравствуйте! Пишу с сайта GulDar Group.",
@@ -75,18 +77,20 @@ export function WhatsAppBuilder() {
   const message = lines.join("\n");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+    <div className="whatsapp-builder grid gap-6 lg:grid-cols-[1.15fr_1fr]">
       <div className="min-w-0 space-y-6">
+        <div className="builder-intro"><p>Все поля необязательны. Можно просто написать нам.</p><button type="button" className="builder-reset" disabled={!hasDetails} onClick={reset}>Сбросить выбор</button></div>
         <Chips label="Что нужно сделать" options={tasks} value={task} onChange={setTask} />
         <Chips label="Какой объект" options={places} value={place} onChange={setPlace} />
         <div className="grid gap-6 sm:grid-cols-[10rem_1fr]">
           <label className="block">
             <span className="text-sm font-semibold text-fg-2">Площадь, м²</span>
             <input
+              name="area"
               inputMode="numeric"
               value={area}
               onChange={(e) => setArea(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="120"
+              placeholder="Например, 120"
               className="mt-2.5 h-11 w-full rounded-xl border border-line-strong bg-ink-900/60 px-4 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
             />
           </label>
@@ -95,42 +99,43 @@ export function WhatsAppBuilder() {
         <label className="block">
           <span className="text-sm font-semibold text-fg-2">Комментарий</span>
           <textarea
+            name="comment"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={2000}
             rows={3}
             placeholder="Например: заменить освещение в торговом зале, работать ночью"
-            className="mt-2.5 w-full resize-none rounded-xl border border-line-strong bg-ink-900/60 px-4 py-3 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
+            className="mt-2.5 w-full resize-y rounded-xl border border-line-strong bg-ink-900/60 px-4 py-3 text-fg placeholder:text-fg-3 focus:border-safety focus:outline-none"
           />
         </label>
       </div>
 
       {/* Превью: так сообщение увидит менеджер */}
-      <div className="flex min-w-0 flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
+      <div className="message-preview flex min-w-0 flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
         <div className="flex items-center gap-3 border-b border-line pb-4">
           <span className="grid size-10 place-items-center rounded-full bg-[#e1f0e9] text-[#147854]">
             <WhatsAppIcon className="size-5" />
           </span>
           <div className="leading-tight">
-            <p className="text-sm font-semibold">{site.name}</p>
+            <p className="text-sm font-semibold">Сообщение для {site.name}</p>
             <p className="text-xs text-fg-3">{site.phone}</p>
           </div>
         </div>
         <div className="flex flex-1 items-end py-5">
           <div
-            aria-live="polite"
+            aria-label="Предпросмотр сообщения"
             className="ml-auto min-w-0 max-w-[92%] rounded-2xl rounded-br-md bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg [overflow-wrap:anywhere]"
           >
             {message}
           </div>
         </div>
-        <a href={waLink(message)} target="_blank" rel="noopener" className="btn btn-accent w-full">
+        <a href={waLink(message)} target="_blank" rel="noopener noreferrer" className="btn btn-accent w-full">
           <WhatsAppIcon />
-          Отправить в WhatsApp
+          Открыть WhatsApp
         </a>
         <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-fg-3">
           <Icon name="check" className="size-3.5" />
-          Фото объекта можно прислать следом в чат
+          Сообщение отправите вы. Фото можно добавить в чате.
         </p>
       </div>
     </div>

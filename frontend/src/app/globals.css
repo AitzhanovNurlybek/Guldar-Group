@@ -32,9 +32,9 @@ input[type="range"] { min-height: 44px; }
 .deferred-widget button { min-height: 44px; min-width: 44px; }
 .deferred-widget button[aria-pressed="false"] { border-color: #688292; }
 :focus-visible { outline: 3px solid var(--signal); outline-offset: 5px; }
-.skip-link { position: fixed; left: 1rem; top: 0; z-index: 100; transform: translateY(-150%); padding: 1rem; border-radius: 6px; background: var(--safety); color: var(--fg); }
+.skip-link { position: fixed; left: 1rem; top: 0; z-index: 100; max-width: calc(100dvw - 2rem); overflow-wrap: anywhere; transform: translateY(-150%); padding: 1rem; border-radius: 6px; background: var(--safety); color: var(--fg); }
 .skip-link:focus { transform: translateY(1rem); }
-.logo-wordmark-title { display: grid; grid-template-columns: 68px 65px; align-items: baseline; }
+.logo-wordmark-title { display: flex; gap: 8px; align-items: baseline; }
 @layer base { h1,h2,h3,h4,.tabular-nums { font-family: var(--font-display); } }
 .page-header .display { font-size: clamp(2rem,4.5vw,4.65rem); overflow-wrap: anywhere; hyphens: auto; }
 @layer components {
