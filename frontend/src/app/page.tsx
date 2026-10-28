@@ -50,7 +50,6 @@ export default function Home() {
               <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Написать в WhatsApp</a>
               <div className="hero-secondary-actions">
                 <a href="#kalkulyator" className="hero-budget-link">Узнать стоимость<Icon name="arrow" className="size-4" /></a>
-                <a href={`tel:${site.technicalTel}`} className="hero-phone-link lg:hidden" aria-label={`Позвонить техническому специалисту: ${site.technicalPhone}`}><Icon name="phone" className="size-4" />Позвонить</a>
               </div>
             </div>
           </div>

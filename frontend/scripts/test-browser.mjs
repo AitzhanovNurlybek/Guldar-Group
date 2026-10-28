@@ -114,6 +114,52 @@ try {
       }
     } finally { await themedPage.close(); }
   });
+  await test("floating contact actions stay visible and readable across sections", async () => {
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewport({ width, height: 900, isMobile: width < 640, hasTouch: width < 1024 });
+      await ready(page);
+      for (const selector of ["#home", "#uslugi", "#otzyvy", "#etapy"]) {
+        await page.$eval(selector, (section) => section.scrollIntoView());
+        const dock = await page.$eval(".contact-dock", (element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            visible: getComputedStyle(element).visibility === "visible",
+            fits: rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+            actions: [...element.querySelectorAll("a")].map((link) => {
+              const label = link.querySelector("span");
+              return { height: link.getBoundingClientRect().height, href: link.getAttribute("href"), labelFits: label.getBoundingClientRect().height <= parseFloat(getComputedStyle(label).lineHeight) + 1 };
+            }),
+          };
+        });
+        assert.ok(dock.visible && dock.fits, `${width}px ${selector}: contact dock is not visible`);
+        assert.ok(dock.actions.every((action) => action.height >= 44 && action.labelFits));
+        assert.equal(dock.actions[0].href, "tel:+77056117474");
+        assert.equal(new URL(dock.actions[1].href).pathname, "/77786812931");
+      }
+    }
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await ready(page);
+  });
+  await test("floating mobile contacts leave the footer readable at normal and 200 percent text", async () => {
+    try {
+      for (const textSize of ["100%", "200%"]) {
+        await ready(page);
+        await page.evaluate(async (size) => {
+          document.documentElement.style.fontSize = size;
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          scrollTo(0, document.documentElement.scrollHeight);
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          scrollTo(0, document.documentElement.scrollHeight);
+        }, textSize);
+        const clear = await page.evaluate(() => {
+          const dock = document.querySelector(".contact-dock").getBoundingClientRect();
+          const bottom = Math.max(...[...document.querySelectorAll(".site-footer p")].map((text) => text.getBoundingClientRect().bottom));
+          return bottom < dock.top && document.documentElement.scrollWidth <= document.documentElement.clientWidth;
+        });
+        assert.ok(clear, `Footer overlaps the contact dock at ${textSize} text`);
+      }
+    } finally { await ready(page); }
+  });
   await test("mobile forms open on request, keep values and follow calculator links", async () => {
     for (const id of ["calculator-options", "brief-options"]) {
       assert.equal(await page.$eval(`#${id}-content`, (content) => getComputedStyle(content).display), "none");
@@ -175,6 +221,7 @@ try {
   await test("mobile menu traps focus, closes with Escape and restores scrolling", async () => {
     await page.locator('header button[aria-controls="mobile-navigation"]').click();
     assert.ok(await page.$eval("dialog", (dialog) => dialog.open));
+    assert.equal(await page.$eval(".contact-dock", (dock) => getComputedStyle(dock).visibility), "hidden");
     for (let i = 0; i < 15; i++) {
       await page.keyboard.press("Tab");
       assert.ok(await page.evaluate(() => document.activeElement === document.body || document.querySelector("dialog").contains(document.activeElement)));
@@ -183,6 +230,7 @@ try {
     assert.ok(await page.$eval("dialog", (dialog) => !dialog.open));
     assert.ok(await page.evaluate(() => getComputedStyle(document.documentElement).overflow !== "hidden"));
     assert.equal(await page.evaluate(() => document.activeElement.getAttribute("aria-controls")), "mobile-navigation");
+    await page.waitForFunction(() => getComputedStyle(document.querySelector(".contact-dock")).visibility === "visible");
   });
   await test("changing to desktop closes the mobile dialog", async () => {
     await page.locator('header button[aria-controls="mobile-navigation"]').click();
@@ -251,7 +299,7 @@ try {
     assert.ok(url.searchParams.get("text").includes(note));
     assert.ok(url.searchParams.get("text").includes("Задача: проектирование"));
     assert.ok(url.searchParams.get("text").includes("Объект: офис"));
-    assert.ok(await page.$eval(".mobile-contact", (link) => getComputedStyle(link).visibility === "hidden"));
+    assert.ok(await page.$eval(".contact-dock", (dock) => getComputedStyle(dock).visibility === "hidden"));
   });
   await test("WhatsApp builder resets details and keeps a usable empty message", async () => {
     assert.ok(await page.$eval(".builder-reset", (button) => !button.disabled));

@@ -1,6 +1,7 @@
 import type { Viewport } from "next";
 import { Footer } from "@/components/Footer";
-import { Sidebar, WhatsAppFab } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
+import { ContactDock } from "@/components/ContactDock";
 import { SceneBackground } from "@/components/scene/SceneBackground";
 import { MotionEffects } from "@/components/MotionEffects";
 import { rootMetadata, organizationJsonLd, serializeJsonLd } from "@/lib/seo";
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main id="main-content" className="flex-1" tabIndex={-1}>{children}</main>
           <Footer />
         </div>
-        <WhatsAppFab />
+        <ContactDock />
       </body>
     </html>
   );
