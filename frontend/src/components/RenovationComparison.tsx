@@ -39,28 +39,29 @@ export function RenovationComparison() {
         }}
       >
         {(["after", "before"] as const).map((stage) => (
-          <picture className={`renovation-comparison-image renovation-comparison-${stage}`} key={`${stage}-${attempt}`}>
-            <source
-              type="image/webp"
-              srcSet={[640, 960, 1536].map((width) => `/images/retail-${stage}-${width}.webp${suffix} ${width}w`).join(", ")}
-              sizes="(min-width: 1440px) 660px, (min-width: 1024px) 50vw, 100vw"
-            />
-            <Image
-              src={`/images/retail-${stage}-1536.webp${suffix}`}
-              width={1536}
-              height={1024}
-              alt={stage === "before"
-                ? "Визуализация магазина до ремонта: черновые стены, бетонный пол и витрины слева"
-                : "Визуализация того же магазина после ремонта: стойки со смартфонами, ноутбуки и готовая отделка"}
-              loading="eager"
-              fetchPriority={stage === "after" ? "high" : "auto"}
-              draggable={false}
-              onError={() => setFailed(true)}
-            />
-          </picture>
+          <div className={`renovation-comparison-image renovation-comparison-${stage}`} key={`${stage}-${attempt}`}>
+            <picture>
+              <source
+                type="image/webp"
+                srcSet={[640, 960, 1536].map((width) => `/images/retail-${stage}-${width}.webp${suffix} ${width}w`).join(", ")}
+                sizes="(min-width: 1440px) 660px, (min-width: 1024px) 50vw, 100vw"
+              />
+              <Image
+                src={`/images/retail-${stage}-1536.webp${suffix}`}
+                width={1536}
+                height={1024}
+                alt={stage === "before"
+                  ? "Визуализация магазина до ремонта: черновые стены, бетонный пол и витрины слева"
+                  : "Визуализация того же магазина после ремонта: стойки со смартфонами, ноутбуки и готовая отделка"}
+                loading="eager"
+                fetchPriority={stage === "after" ? "high" : "auto"}
+                draggable={false}
+                onError={() => setFailed(true)}
+              />
+            </picture>
+            <span className={`renovation-comparison-label renovation-comparison-label-${stage}`} aria-hidden="true">{stage === "before" ? "До ремонта" : "После ремонта"}</span>
+          </div>
         ))}
-        <span className="renovation-comparison-label renovation-comparison-label-before" aria-hidden="true">До ремонта</span>
-        <span className="renovation-comparison-label renovation-comparison-label-after" aria-hidden="true">После ремонта</span>
         <input
           ref={rangeRef}
           className="renovation-comparison-range"

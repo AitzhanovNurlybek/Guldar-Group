@@ -25,7 +25,7 @@
 - `public/images/retail-before-640.webp`, `retail-before-960.webp`, `retail-before-1536.webp`.
 - `public/images/retail-after-640.webp`, `retail-after-960.webp`, `retail-after-1536.webp`.
 
-Оригиналы сохранены в `assets/renovation/retail-before.png` и `assets/renovation/retail-after.png`. WebP подготовлены Sharp: только изменение размера и сжатие, без правки содержания. Сравнение накладывает полные изображения с одинаковыми `object-fit` и `object-position`; меняется только обрезка верхнего слоя. Никакого растягивания половин при перетаскивании.
+Оригиналы сохранены в `assets/renovation/retail-before.png` и `assets/renovation/retail-after.png`. WebP подготовлены Sharp: только изменение размера и сжатие, без правки содержания. Сравнение накладывает полные изображения с одинаковыми `object-fit` и `object-position`; меняется только область видимости слоёв вместе с их подписями. Никакого растягивания половин при перетаскивании.
 
 Промпт «До»:
 
