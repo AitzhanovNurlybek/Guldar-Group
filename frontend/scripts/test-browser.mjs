@@ -77,6 +77,36 @@ try {
 
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
   await ready(page);
+  await test("mobile keeps readable light colours in dark OS and Chromium Auto Dark", async () => {
+    const themedPage = await browser.newPage();
+    const cdp = await themedPage.createCDPSession();
+    try {
+      await themedPage.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "dark" }]);
+      for (const width of [360, 384, 412, 430]) {
+        await themedPage.setViewport({ width, height: 900, isMobile: true, hasTouch: true });
+        await cdp.send("Emulation.setAutoDarkModeOverride", { enabled: false });
+        await ready(themedPage);
+        const settings = await themedPage.evaluate(() => ({
+          scheme: document.head.querySelector('meta[name="color-scheme"]')?.content,
+          viewport: document.head.querySelector('meta[name="viewport"]')?.content,
+          width: innerWidth,
+          scale: visualViewport.scale,
+          lead: parseFloat(getComputedStyle(document.querySelector(".editorial-hero-lead")).fontSize),
+        }));
+        assert.equal(settings.scheme, "only light");
+        assert.equal(settings.width, width);
+        assert.equal(settings.scale, 1);
+        assert.ok(settings.lead >= 17);
+        assert.doesNotMatch(settings.viewport, /user-scalable=no|maximum-scale=1(?:,|$)/);
+        const sample = { x: 1, y: 200, width: 4, height: 4 };
+        const light = Buffer.from(await themedPage.screenshot({ clip: sample }));
+        await cdp.send("Emulation.setAutoDarkModeOverride", { enabled: true });
+        await themedPage.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const autoDark = Buffer.from(await themedPage.screenshot({ clip: sample }));
+        assert.ok(autoDark.equals(light), `Auto Dark recoloured the mobile background at ${width}px`);
+      }
+    } finally { await themedPage.close(); }
+  });
   await test("interior concept is labelled and real evidence stays accessible", async () => {
     assert.ok(await page.$eval(".hero-interior figcaption", (caption) => caption.textContent.includes("AI-визуализация")));
     assert.ok(await page.$eval(".hero-interior img", (image) => image.alt.includes("Визуализация")));

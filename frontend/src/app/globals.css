@@ -13,7 +13,7 @@
   --ease-fluid: cubic-bezier(.22,1,.36,1);
   --font-manrope: var(--font-body-cyr), var(--font-body-latin), Arial, sans-serif;
   --font-montserrat: var(--font-heading-cyr), var(--font-body-latin), Arial, sans-serif;
-  color-scheme: light;
+  color-scheme: only light;
 }
 @theme inline {
   --color-ink-950: var(--ink-950); --color-ink-900: var(--ink-900); --color-ink-850: var(--ink-850); --color-ink-800: var(--ink-800);
@@ -26,7 +26,7 @@
   --text-base: 1.0625rem; --text-base--line-height: 1.7;
 }
 html { background: var(--ink-950); scroll-padding-top: 96px; scrollbar-gutter: stable; }
-body { color: var(--fg); font-size: 1.0625rem; font-weight: 500; line-height: 1.7; }
+body { background: var(--ink-950); color: var(--fg); font-size: 1.0625rem; font-weight: 500; line-height: 1.7; }
 main, section, fieldset { min-width: 0; }
 img, canvas { max-width: 100%; }
 ::selection { background: var(--safety-hi); color: var(--fg); }
