@@ -164,12 +164,12 @@ try {
     for (const id of ["calculator-options", "brief-options"]) {
       assert.equal(await page.$eval(`#${id}-content`, (content) => getComputedStyle(content).display), "none");
     }
-    await page.locator(".hero-budget-link").click();
+    await page.locator(".editorial-hero-actions a[href=\"#kalkulyator\"]").click();
     await page.waitForSelector("#calc-area-input", { visible: true });
     await typeInto(page, "#calc-area-input", "120");
     await page.locator("#calculator-options-trigger").click();
     assert.equal(await page.$eval("#calculator-options-content", (content) => getComputedStyle(content).display), "none");
-    await page.locator(".hero-budget-link").click();
+    await page.locator(".editorial-hero-actions a[href=\"#kalkulyator\"]").click();
     await page.waitForSelector("#calc-area-input", { visible: true });
     assert.equal(await page.$eval("#calc-area-input", (input) => input.value), "120");
     await page.focus("#calculator-options-trigger");

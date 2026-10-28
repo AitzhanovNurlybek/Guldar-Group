@@ -44,7 +44,7 @@ export function RoomExplorer() {
       <button type="button" className="text-link" onClick={close}>Завершить просмотр<Icon name="close" className="size-4" /></button>
       <p>Вращайте мышью или пальцем. Кнопками тоже можно.</p>
     </div> : <div className="room-controls">
-      <button ref={enableButton} type="button" className="btn btn-primary room-enable" onClick={() => { setFailed(false); setEnabled(true); }}><Icon name="box" className="size-5" />Повернуть макет в 3D</button>
+      <button ref={enableButton} type="button" className="btn btn-ghost room-enable" onClick={() => { setFailed(false); setEnabled(true); }}><Icon name="box" className="size-5" />Повернуть макет в 3D</button>
       <p>{failed ? "Не удалось открыть 3D. Можно попробовать ещё раз." : "Включите просмотр, чтобы рассмотреть помещение со всех сторон."}</p>
     </div>}
     <figcaption>Иллюстрация этапов ремонта · 3D-макет</figcaption>

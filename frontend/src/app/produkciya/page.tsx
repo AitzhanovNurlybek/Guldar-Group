@@ -17,7 +17,8 @@ export default function ProductsPage() {
     <>
       <PageHeader
         eyebrow="Поставка"
-        title="Материалы для объекта"
+        title="Стройматериалы для объекта"
+        crumb={{ name: "Поставка", path: "/produkciya" }}
         lead="Пришлите список — посчитаем цену и сроки."
       />
       <Container className="space-y-10 pb-8">

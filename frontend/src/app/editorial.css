@@ -23,9 +23,6 @@ main, .site-footer { overflow-wrap: anywhere; }
 .editorial-hero h1 { margin-top: 2rem; font-size: clamp(2.8rem,3.9vw,4.25rem); font-weight: 700; letter-spacing: -.045em; line-height: 1.14; }
 .editorial-hero-lead { margin-top: 1.75rem; max-width: 29rem; color: var(--fg-2); font-size: 1.125rem; line-height: 1.8; }
 .editorial-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; margin-top: 2.25rem; }
-.hero-budget-link { display: inline-flex; align-items: center; gap: .7rem; min-height: 44px; padding-block: .5rem; color: var(--fg-2); font-size: .9375rem; font-weight: 600; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 6px; }
-.hero-budget-link:hover { color: var(--brand); text-decoration-color: currentColor; }
-.hero-secondary-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1.75rem; }
 .service-link-label { display: inline-flex; align-items: center; gap: .5rem; }
 .hero-help { margin-top: 1rem; max-width: 27rem; font-size: .9375rem; line-height: 1.7; color: var(--fg-2); }
 .hero-signature { display: flex; flex-wrap: wrap; gap: .5rem 1rem; width: 100%; margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); color: var(--fg-2); font-size: .875rem; }
@@ -225,8 +222,6 @@ main .panel, main .panel-strong, main .panel-glass { border-radius: 10px; }
   .editorial-hero-lead { margin-top: 1.5rem; font-size: 1.0625rem; line-height: 1.8; }
   .editorial-hero-actions { width: 100%; flex-direction: column; align-items: stretch; margin-top: 2rem; gap: .75rem; }
   .editorial-hero-actions .btn { min-height: 52px; padding-inline: 1rem; }
-  .hero-budget-link { align-self: flex-start; font-size: 1rem; }
-  .hero-secondary-actions { justify-content: space-between; gap: .5rem 1rem; }
   .hero-signature { margin-top: 1.75rem; padding-top: 1.25rem; justify-content: space-between; }
   .editorial-hero .hero-technical-contact { margin-top: .8rem; padding-block: .7rem .2rem; }
   .hero-interior picture { aspect-ratio: 1.25; }
@@ -296,4 +291,47 @@ main .panel, main .panel-strong, main .panel-glass { border-radius: 10px; }
   .brief-heading { gap: 1rem; }
   .company-principles { grid-template-columns: minmax(0,1fr); gap: 1.5rem; }
   .page-header > div { padding-bottom: 1.1rem; }
+}
+
+/* Кнопки: одна округлая форма для всех действий, как у плавающей панели.
+   Иерархия: заливка акцентом — главное действие, контур основным цветом — второстепенное, подчёркнутая ссылка — переход. */
+:root { --radius-control: 999px; --shadow-accent: 0 10px 22px -12px #bd4826b3; }
+.btn { padding-inline: 1.75rem; letter-spacing: -.005em; transition: background-color .15s ease-out,border-color .15s ease-out,color .15s ease-out,box-shadow .15s ease-out,transform .15s ease-out; }
+.btn-sm { padding-inline: 1.15rem; }
+.btn-accent { box-shadow: var(--shadow-accent); }
+.btn-ghost { border: 1.5px solid var(--brand); background: #fff; color: var(--brand); }
+.mobile-menu-trigger, .scroll-menu-dock { border-radius: 999px; }
+.choice-chip { border-radius: 999px; padding-inline: 1rem; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-accent:hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px #bd4826cc; }
+  .btn-ghost:hover { background: var(--ink-850); }
+}
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.editorial-hero-actions { gap: .75rem 1rem; }
+.editorial-hero-actions .btn { min-width: 17.5rem; }
+.hero-note { display: flex; align-items: center; gap: .5rem; margin-top: 1.25rem; color: var(--fg-2); font-size: .9375rem; font-weight: 600; }
+.hero-note svg { flex-shrink: 0; color: var(--brand); }
+
+@media (max-width: 639px) {
+  .editorial-hero-actions .btn { width: 100%; min-width: 0; }
+  .hero-note { margin-top: 1rem; font-size: .875rem; }
+
+  /* Раскрытие калькулятора и деталей — заметная второстепенная кнопка, а не строка списка. */
+  .mobile-disclosure-trigger { justify-content: center; gap: .75rem; min-height: 52px; padding: .8rem 1.5rem; border: 1.5px solid var(--brand); border-radius: 999px; background: #fff; color: var(--brand); text-align: center; font-weight: 700; }
+  .mobile-disclosure-trigger[aria-expanded="true"] { background: var(--ink-850); }
+  .disclosure-sign { font-size: 1.25rem; line-height: 1; }
+
+  /* Логотипы в три колонки: весь блок помещается примерно в пол-экрана. */
+  .client-logos { grid-template-columns: repeat(3,minmax(0,1fr)); gap: .25rem 1rem; }
+  .client-logos li { min-height: 68px; padding: .5rem .25rem; }
+  .client-logo-image { height: 36px; }
+
+  /* Контакты — компактные строки: значок слева, подпись и значение справа. */
+  .contact-channels { gap: 0; }
+  .contact-channels a { display: grid; grid-template-columns: 2.75rem minmax(0,1fr); column-gap: .75rem; align-items: center; padding: 1rem 0; border-top: 0; }
+  .contact-channels > :first-child a { border-top: 1px solid var(--line-strong); }
+  .contact-channels a > span:first-child { grid-row: 1 / span 2; }
+  .contact-channels a > span:nth-child(2) { margin-top: 0; }
+  .technical-contact-panel { padding: 1.5rem; }
+  .technical-contact-panel .btn { width: 100%; }
 }

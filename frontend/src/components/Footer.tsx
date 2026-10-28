@@ -9,7 +9,7 @@ export function Footer() {
       <Container>
         <div className="panel overflow-hidden rounded-3xl">
           <div className="hazard h-1.5" aria-hidden />
-          <div className="p-6 sm:p-8">
+          <div className="px-0 py-4 sm:p-8">
             <div className="grid gap-8 sm:grid-cols-[1.3fr_1fr_1.2fr]">
               <div>
                 <Logo />
@@ -24,11 +24,11 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-              <div className="space-y-2.5 text-sm text-fg-2">
-                <a href={`tel:+${site.whatsapp}`} className="block font-display text-xl font-extrabold tracking-[-0.02em] text-fg hover:text-safety">
+              <div className="flex flex-col items-start gap-2.5 text-sm text-fg-2">
+                <a href={`tel:+${site.whatsapp}`} className="font-display text-xl font-extrabold tracking-[-0.02em] text-fg hover:text-safety">
                   {site.phone}
                 </a>
-                <a href={`mailto:${site.email}`} className="block hover:text-fg">
+                <a href={`mailto:${site.email}`} className="hover:text-fg">
                   {site.email}
                 </a>
                 <a href={`tel:${site.technicalTel}`} className="technical-footer-link block py-2 font-bold text-fg"><span className="block text-xs font-medium text-fg-3">Технический специалист</span>{site.technicalPhone}</a>

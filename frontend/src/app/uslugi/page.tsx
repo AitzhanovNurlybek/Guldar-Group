@@ -18,7 +18,8 @@ export default function ServicesPage() {
     <>
       <PageHeader
         eyebrow="Услуги и цены"
-        title="От розетки до здания"
+        title="Ремонт и строительство в Алматы"
+        crumb={{ name: "Услуги и цены", path: "/uslugi" }}
         lead="Цены — ориентир. Точную сумму зафиксируем в договоре после выезда."
       />
       <Container className="space-y-16 pb-8">

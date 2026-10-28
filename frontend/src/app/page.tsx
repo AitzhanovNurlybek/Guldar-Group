@@ -12,6 +12,7 @@ import { Testimonials } from "@/components/Testimonials";
 import { RoomExplorer } from "@/components/scene/RoomExplorer";
 import { MobileDisclosure } from "@/components/MobileDisclosure";
 import { productGroups, services, site, waGreeting, waLink } from "@/lib/site";
+import { faqJsonLd, serializeJsonLd } from "@/lib/seo";
 
 const mainServices = ["pod-klyuch", "proektirovanie", "dizayn-proekt", "otdelka", "elektromontazh", "santehnika", "kto", "metallokonstrukcii"].map(
   (slug) => services.find((service) => service.slug === slug)!,
@@ -44,14 +45,13 @@ export default function Home() {
         <div className="hero-composition">
           <div className="editorial-hero-copy">
             <p className="hero-location">Алматы <span>С {site.foundedYear} года</span></p>
-            <h1>Ремонт для<br />вашего бизнеса.</h1>
-            <p className="editorial-hero-lead">Проектирование, ремонт и материалы для коммерческих помещений.</p>
+            <h1>Ремонт офисов и магазинов под&nbsp;ключ.</h1>
+            <p className="editorial-hero-lead">Проектирование, ремонт и материалы для коммерческих помещений в Алматы.</p>
             <div className="editorial-hero-actions">
               <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Написать в WhatsApp</a>
-              <div className="hero-secondary-actions">
-                <a href="#kalkulyator" className="hero-budget-link">Узнать стоимость<Icon name="arrow" className="size-4" /></a>
-              </div>
+              <a href="#kalkulyator" className="btn btn-ghost">Рассчитать стоимость</a>
             </div>
+            <p className="hero-note"><Icon name="check" className="size-4" />Смета и договор до начала работ</p>
           </div>
           <figure className="hero-interior">
             <picture>
@@ -105,7 +105,7 @@ export default function Home() {
 
     <section id="postavka" className="section-space supply-section scroll-mt-28"><Container><Reveal className="supply-panel"><div><p className="eyebrow">Поставка</p><h2 className="title mt-3">Материалы для ремонта.</h2><p className="mt-4 max-w-lg text-fg-2">Комплектуем объект по согласованному списку.</p><Link href="/produkciya" className="text-link mt-6">Каталог материалов<Icon name="arrowUpRight" className="size-5" /></Link></div><div className="supply-directions">{productGroups.map((group) => <div key={group.title}><Icon name={group.icon} className="size-6" /><div><h3>{group.title}</h3><p>{group.text}</p></div></div>)}</div></Reveal></Container></section>
 
-    <section className="section-space faq-section"><Container className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHead eyebrow="Вопросы" title="Перед началом работ." /><div className="faq-list">{faq.map((item) => <details key={item.question}><summary>{item.question}<span aria-hidden>+</span></summary><p>{item.answer}</p></details>)}</div></Container></section>
+    <section className="section-space faq-section"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd(faq)) }} /><Container className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHead eyebrow="Вопросы" title="Перед началом работ." /><div className="faq-list">{faq.map((item) => <details key={item.question}><summary>{item.question}<span aria-hidden>+</span></summary><p>{item.answer}</p></details>)}</div></Container></section>
 
     <section id="obsudit" className="section-space brief-section scroll-mt-28"><Container><Reveal className="panel-strong brief-panel"><SectionHead eyebrow="Начнём с вашего объекта" title="Обсудим ремонт?" /><div className="brief-quick-actions"><a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Написать в WhatsApp</a><a href={`tel:${site.technicalTel}`} className="text-link">{site.technicalPhone}</a></div><MobileDisclosure id="brief-options" sectionId="obsudit" label="Добавить детали объекта"><DeferredWidget kind="whatsapp" /></MobileDisclosure></Reveal></Container></section>
   </SceneProvider>;

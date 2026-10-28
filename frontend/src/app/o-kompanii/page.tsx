@@ -27,6 +27,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="О компании"
         title="Ремонтируем и обслуживаем с 2015 года"
+        crumb={{ name: "О компании", path: "/o-kompanii" }}
         lead="Офисы, магазины и торговые площади в Алматы. Плюс металлоконструкции и поставка материалов."
       />
       <Container className="space-y-20 pb-8">

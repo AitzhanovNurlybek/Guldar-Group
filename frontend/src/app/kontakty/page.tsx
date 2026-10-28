@@ -22,7 +22,7 @@ const channels: { icon: IconName | "wa"; label: string; value: string; href: str
 export default function ContactsPage() {
   return (
     <>
-      <PageHeader eyebrow="Контакты" title="Давайте обсудим" lead={site.hours} />
+      <PageHeader eyebrow="Контакты" title="Давайте обсудим ваш объект" lead={site.hours} crumb={{ name: "Контакты", path: "/kontakty" }} />
       <Container className="space-y-6 pb-8">
         <div className="contact-channels grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {channels.map((c, i) => (
@@ -44,7 +44,7 @@ export default function ContactsPage() {
 
         <div className="technical-contact-panel">
           <div><p className="eyebrow">Вопросы по объекту и работам</p><h2>Технический специалист</h2><p>Обсудите состояние помещения, проектирование и состав ремонта.</p></div>
-          <a href={`tel:${site.technicalTel}`} className="btn btn-primary"><Icon name="phone" className="size-5" />{site.technicalPhone}</a>
+          <a href={`tel:${site.technicalTel}`} className="btn btn-ghost"><Icon name="phone" className="size-5" />{site.technicalPhone}</a>
         </div>
 
         <Reveal>
