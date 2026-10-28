@@ -9,7 +9,7 @@ import "./globals.css";
 import "./editorial.css";
 
 export const metadata = rootMetadata;
-export const viewport: Viewport = { themeColor: "#f6f8f7", viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#f4f5f6", viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

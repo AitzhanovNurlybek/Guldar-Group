@@ -41,7 +41,7 @@ export default function ServicesPage() {
               <h2 className="text-2xl font-extrabold tracking-[-0.025em]">{g.title}</h2>
               <p className="text-fg-2">{g.lead}</p>
             </Reveal>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid gap-6 sm:grid-cols-2">
               {g.items.map((s, i) => (
                 <Reveal key={s.slug} delay={(i % 3) * 70}>
                   <ServiceCard {...s} />

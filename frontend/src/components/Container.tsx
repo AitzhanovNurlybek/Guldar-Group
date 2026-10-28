@@ -17,7 +17,7 @@ export function SectionHead({
     <div className={`max-w-2xl ${className}`}>
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
       <h2 className="title mt-3">{title}</h2>
-      {lead && <p className="mt-3 text-lg leading-relaxed text-fg-2">{lead}</p>}
+      {lead && <p className="section-lead text-fg-2">{lead}</p>}
     </div>
   );
 }

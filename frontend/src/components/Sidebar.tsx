@@ -28,8 +28,8 @@ function NavList({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={mobile
-                  ? `flex items-center gap-5 py-5 text-xl font-bold transition-colors ${active ? "text-signal" : "text-fg hover:text-signal"}`
-                  : `relative flex h-[88px] items-center whitespace-nowrap text-[0.8rem] font-bold transition-colors xl:text-sm after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-safety after:transition-transform ${active ? "text-fg after:scale-x-100" : "text-fg-2 hover:text-fg after:scale-x-0 hover:after:scale-x-100"}`}
+                  ? `flex items-center gap-5 py-5 text-xl font-semibold transition-colors ${active ? "text-fg underline decoration-1 underline-offset-8" : "text-fg-2 hover:text-fg"}`
+                  : `relative flex h-[88px] items-center whitespace-nowrap text-[0.9375rem] font-semibold transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-fg after:transition-transform ${active ? "text-fg after:scale-x-100" : "text-fg-2 hover:text-fg after:scale-x-0 hover:after:scale-x-100"}`}
               >
                 {mobile && <span className="text-xs font-medium tabular-nums text-fg-3" aria-hidden>0{index + 1}</span>}
                 {item.label}
@@ -148,10 +148,10 @@ export function Sidebar() {
 
           <div className="hidden items-center gap-6 lg:flex">
             <a href={`tel:${site.technicalTel}`} className="hidden whitespace-nowrap text-sm font-extrabold text-fg transition-colors hover:text-signal xl:block">
-              <span className="mb-1 block text-[0.65rem] font-semibold text-fg-3">Технический специалист</span>
+              <span className="mb-1 block text-xs font-semibold text-fg-2">Технический специалист</span>
               {site.technicalPhone}
             </a>
-            <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="flex h-11 shrink-0 items-center justify-center gap-2.5 rounded-md bg-safety px-4 text-[0.8rem] font-extrabold text-[#21180f] transition-[background-color,transform] hover:brightness-95 active:translate-y-px xl:px-5">
+            <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm shrink-0">
               <WhatsAppIcon className="size-4" />
               Обсудить проект
             </a>
@@ -235,13 +235,13 @@ export function Sidebar() {
             </button>
           </div>
 
-          <p className="mt-8 mb-3 text-[0.65rem] font-bold tracking-[0.15em] text-fg-3 uppercase">Строительная компания · Алматы</p>
+          <p className="mt-8 mb-3 text-sm font-semibold text-fg-2">Строительная компания · Алматы</p>
           <NavList mobile onNavigate={closeMenu} />
 
           <div className="mt-auto pt-10">
             <p className="text-lg font-bold">Начнём с вашего проекта.</p>
             <p className="mt-2 text-sm leading-relaxed text-fg-2">Расскажите, что нужно построить или отремонтировать.</p>
-            <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="mt-5 flex min-h-12 items-center justify-center gap-3 rounded-md bg-safety px-5 py-3 text-sm font-extrabold text-[#21180f] transition-[filter] hover:brightness-95">
+            <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="btn btn-accent mt-5 w-full">
               <WhatsAppIcon className="size-5" />
               Обсудить проект в WhatsApp
             </a>
@@ -259,11 +259,29 @@ export function Sidebar() {
 }
 
 export function WhatsAppFab() {
+  const pathname = usePathname();
   const [shown, setShown] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(false);
 
   useEffect(() => {
     return subscribeScroll(({ y, vh }) => setShown(y > vh * 0.6));
   }, []);
+
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const visibleControls = new Set<Element>();
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visibleControls.add(entry.target);
+        else visibleControls.delete(entry.target);
+      }
+      setControlsVisible(visibleControls.size > 0);
+    });
+    document.querySelectorAll(".scene-showcase, .room-explorer, .deferred-widget, .price-calculator, .whatsapp-builder").forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const visible = shown && !controlsVisible;
 
   return (
     <a
@@ -271,9 +289,9 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Обсудить проект в WhatsApp"
-      tabIndex={shown ? undefined : -1}
-      aria-hidden={!shown}
-      className={`mobile-contact fixed right-4 bottom-4 z-30 flex min-h-12 min-w-12 items-center justify-center gap-2.5 rounded-md bg-safety px-3 py-3 text-sm font-extrabold text-[#21180f] shadow-[0_8px_30px_rgb(30_40_50/0.18)] transition-[translate,opacity] duration-200 motion-reduce:transition-none sm:px-5 lg:hidden ${shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
+      tabIndex={visible ? undefined : -1}
+      aria-hidden={!visible}
+      className={`btn btn-accent mobile-contact fixed right-4 bottom-4 z-30 min-w-12 px-3 shadow-[0_4px_16px_rgb(23_47_62/0.16)] transition-[translate,opacity] duration-200 motion-reduce:transition-none sm:px-5 lg:hidden ${visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >
       <WhatsAppIcon className="size-5" />

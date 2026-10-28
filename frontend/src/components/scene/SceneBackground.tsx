@@ -45,7 +45,7 @@ export function SceneShowcase() {
       <div className="scene-stage-list" role="group" aria-label="Этапы ремонта">{STAGES.map((item, i) => <button key={item.short} type="button" className="scene-stage-button" data-active={stage === i} aria-pressed={stage === i} aria-label={`Показать этап: ${item.title}`} onClick={() => selectSceneProgress(item.progress)}><span>0{i + 1}</span><span>{item.short}</span></button>)}</div>
       <label className="sr-only" htmlFor="scene-progress">Посмотреть ход ремонта</label>
       <input ref={range} id="scene-progress" type="range" min={0} max={100} step={1} defaultValue={0} aria-valuetext={`0% — ${STAGES[0].title}`} onChange={(event) => selectSceneProgress(Number(event.target.value) / 100)} className="scene-range" />
-      <div className="scene-showcase-hint"><span>{staticScene ? "Выберите этап или двигайте ползунок" : "Листайте страницу или выберите этап"}</span>{manual && !staticScene && <button type="button" className="scene-auto-button" onClick={() => selectSceneProgress(undefined)}>По прокрутке</button>}<a href="#maket" className="scene-explorer-link">Осмотреть макет в 3D →</a></div>
+      <div className="scene-showcase-hint"><span>{staticScene ? "Выберите этап или двигайте ползунок" : "Листайте страницу или выберите этап"}</span>{manual && !staticScene && <button type="button" className="scene-auto-button" onClick={() => selectSceneProgress(undefined)}>По прокрутке</button>}<a href="#maket" className="scene-explorer-link">Осмотреть макет в 3D</a></div>
     </div>
   </div>;
 }

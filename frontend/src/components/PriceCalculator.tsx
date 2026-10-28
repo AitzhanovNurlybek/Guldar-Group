@@ -34,9 +34,7 @@ function Chips<T extends string>({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(o.id)}
-              className={`min-h-11 max-w-full rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-                on ? "border-safety bg-safety text-[#1a0e02]" : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
-              }`}
+              className="choice-chip min-h-11 max-w-full rounded-md border border-line-strong bg-ink-900 px-3 py-2 text-sm font-medium text-fg-2 transition-colors duration-150"
             >
               {o.label}
             </button>
@@ -54,17 +52,15 @@ function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on
       role="switch"
       aria-checked={on}
       onClick={() => onChange(!on)}
-      className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
-        on ? "border-safety/60 bg-safety/10" : "border-line-strong bg-ink-900/60 hover:border-safety/40"
-      }`}
+      className="option-toggle flex items-center justify-between gap-3 rounded-lg border border-line-strong px-4 py-3 text-left transition-colors duration-150"
     >
       <span>
         <span className="block text-sm font-semibold">{label}</span>
         <span className="block text-xs text-fg-3">{hint}</span>
       </span>
-      <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? "bg-safety" : "bg-line-strong"}`}>
+      <span className="option-switch relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150">
         <span
-          className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform duration-300 ease-(--ease-fluid) ${
+          className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform duration-150 ease-out ${
             on ? "translate-x-[1.125rem]" : "translate-x-0.5"
           }`}
         />
@@ -126,7 +122,7 @@ export function PriceCalculator() {
     .join("\n");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+    <div className="price-calculator grid gap-6 lg:grid-cols-[1.25fr_1fr]">
       {/* min-w-0: иначе самый широкий неразрывный элемент растягивает колонку шире экрана телефона */}
       <div className="min-w-0 space-y-6">
         <Chips label="Что нужно сделать" options={generalWorks} value={workId} onChange={setWorkId} />
@@ -164,7 +160,7 @@ export function PriceCalculator() {
               step={5}
               value={Math.min(area, 1000)}
               onChange={(e) => setAreaInput(e.target.value)}
-              className="mt-3 w-full accent-[#f5871f]"
+              className="mt-3 w-full"
             />
             <div className="mt-1 flex justify-between text-xs text-fg-3">
               <span>10 м²</span>
@@ -207,8 +203,7 @@ export function PriceCalculator() {
         <Toggle label="Срочно" hint="Начать в ближайшие дни, работа в две смены" on={rush} onChange={setRush} />
       </div>
 
-      {/* Итог */}
-      <div className="flex min-w-0 flex-col rounded-3xl border border-line bg-ink-950/70 p-5 sm:p-6">
+      <div className="calculator-summary flex min-w-0 flex-col rounded-xl border border-line p-5 sm:p-7">
         <p className="text-sm font-semibold text-fg-2">Ориентировочно</p>
         <p className="mt-2 text-[clamp(1.5rem,2.4vw+0.8rem,2.8rem)] leading-tight font-extrabold tracking-[-0.03em] tabular-nums" aria-hidden="true">
           {money(low)}

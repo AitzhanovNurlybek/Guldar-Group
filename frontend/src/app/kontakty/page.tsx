@@ -32,11 +32,7 @@ export default function ContactsPage() {
                 {...(c.external ? { target: "_blank", rel: "noopener" } : {})}
                 className="panel lift flex h-full flex-col rounded-2xl p-6"
               >
-                <span
-                  className={`grid size-11 place-items-center rounded-xl ${
-                    c.icon === "wa" ? "bg-[#e1f0e9] text-[#147854]" : "bg-steel-600/40 text-ice-300"
-                  }`}
-                >
+                <span className="grid size-11 place-items-center text-fg">
                   {c.icon === "wa" ? <WhatsAppIcon /> : <Icon name={c.icon} />}
                 </span>
                 <span className="mt-5 text-sm font-semibold text-fg-2">{c.label}</span>
@@ -72,7 +68,7 @@ export default function ContactsPage() {
               <span className="block text-lg font-bold">Открыть в 2GIS</span>
               <span className="mt-1 block text-sm text-fg-2">{site.address}</span>
             </span>
-            <Icon name="arrowUpRight" className="size-5 text-safety" />
+            <Icon name="arrowUpRight" className="size-5 text-fg" />
           </a>
         </Reveal>
       </Container>

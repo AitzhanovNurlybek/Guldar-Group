@@ -42,11 +42,7 @@ function Chips({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on ? null : o)}
-              className={`min-h-11 max-w-full rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-                on
-                  ? "border-safety bg-safety text-[#1a0e02]"
-                  : "border-line-strong bg-ink-900/60 text-fg-2 hover:border-safety/50 hover:text-fg"
-              }`}
+              className="choice-chip min-h-11 max-w-full rounded-md border border-line-strong bg-ink-900 px-3 py-2 text-sm font-medium text-fg-2 transition-colors duration-150"
             >
               {o}
             </button>
@@ -113,7 +109,7 @@ export function WhatsAppBuilder() {
       {/* Превью: так сообщение увидит менеджер */}
       <div className="message-preview flex min-w-0 flex-col rounded-2xl border border-line bg-ink-950/70 p-5">
         <div className="flex items-center gap-3 border-b border-line pb-4">
-          <span className="grid size-10 place-items-center rounded-full bg-[#e1f0e9] text-[#147854]">
+          <span className="message-channel-icon grid size-10 place-items-center rounded-lg">
             <WhatsAppIcon className="size-5" />
           </span>
           <div className="leading-tight">
@@ -124,7 +120,7 @@ export function WhatsAppBuilder() {
         <div className="flex flex-1 items-end py-5">
           <div
             aria-label="Предпросмотр сообщения"
-            className="ml-auto min-w-0 max-w-[92%] rounded-2xl rounded-br-md bg-[#0f5f45] px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#e8fff3] shadow-lg [overflow-wrap:anywhere]"
+            className="min-w-0 rounded-lg px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]"
           >
             {message}
           </div>
