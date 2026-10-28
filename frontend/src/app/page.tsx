@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Container, SectionHead } from "@/components/Container";
 import { Icon, WhatsAppIcon } from "@/components/Icons";
@@ -11,6 +10,7 @@ import { ClientLogos } from "@/components/ClientLogos";
 import { Testimonials } from "@/components/Testimonials";
 import { RoomExplorer } from "@/components/scene/RoomExplorer";
 import { MobileDisclosure } from "@/components/MobileDisclosure";
+import { RenovationComparison } from "@/components/RenovationComparison";
 import { clients, productGroups, services, site, waGreeting, waLink } from "@/lib/site";
 import type { IconName } from "@/components/Icons";
 import { faqJsonLd, serializeJsonLd } from "@/lib/seo";
@@ -51,7 +51,7 @@ export default function Home() {
 
     <section id="home" className="editorial-hero">
       <Container>
-        <div className="hero-composition">
+        <div className="hero-composition hero-composition--comparison">
           <div className="editorial-hero-copy">
             <p className="hero-location">Алматы <span>С {site.foundedYear} года</span></p>
             <h1>Ремонт офисов и магазинов под&nbsp;ключ.</h1>
@@ -63,15 +63,9 @@ export default function Home() {
             </div>
             <p className="hero-note"><Icon name="check" className="size-4" />Смета и договор до начала работ</p>
           </div>
-          <figure className="hero-interior">
-            <picture>
-              <source type="image/webp" srcSet="/images/interior-concept-640.webp 640w, /images/interior-concept-960.webp 960w, /images/interior-concept-1536.webp 1536w" sizes="(min-width: 1024px) 54vw, 100vw" />
-              <Image src="/images/interior-concept-1536.webp" width={1536} height={1024} alt="Визуализация концепции коммерческого интерьера: приёмная, зона ожидания и переговорная" loading="eager" fetchPriority="high" />
-            </picture>
-            <figcaption><span>Концепция интерьера</span><span>AI-визуализация</span></figcaption>
-          </figure>
         </div>
       </Container>
+      <RenovationComparison />
     </section>
 
     <section className="facts-band" aria-label="GulDar Group в цифрах"><Container><dl className="facts">{facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></Container></section>

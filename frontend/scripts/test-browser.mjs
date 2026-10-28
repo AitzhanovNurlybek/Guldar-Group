@@ -182,12 +182,83 @@ try {
     await page.waitForSelector("#calc-area-input", { visible: true });
     await ready(page);
   });
-  await test("interior concept is labelled and real evidence stays accessible", async () => {
-    assert.ok(await page.$eval(".hero-interior figcaption", (caption) => caption.textContent.includes("AI-визуализация")));
-    assert.ok(await page.$eval(".hero-interior img", (image) => image.alt.includes("Визуализация")));
+  await test("renovation concept is labelled and real evidence stays accessible", async () => {
+    assert.ok(await page.$eval(".renovation-comparison figcaption", (caption) => caption.textContent.includes("AI-визуализация")));
+    assert.ok(await page.$$eval(".renovation-comparison img", (images) => images.length === 2 && images.every((image) => image.alt.includes("Визуализация"))));
     assert.equal(await page.$$eval(".agreement-list > div", (items) => items.length), 3);
     assert.equal(await page.$$eval(".testimonial", (items) => items.length), 3);
     assert.ok(await page.$('a[href="/o-kompanii#rekvizity"]'));
+  });
+  await test("comparison reveals the same room with mouse and keyboard at full viewport width", async () => {
+    await page.setViewport({ width: 1440, height: 1000, isMobile: false, hasTouch: false });
+    await ready(page);
+    await page.waitForFunction(() => [...document.querySelectorAll(".renovation-comparison img")].every((image) => image.complete && image.naturalWidth > 0));
+    await page.screenshot({ path: `${out}/home-comparison-1440.png` });
+    await page.$eval(".renovation-comparison-frame", (element) => element.scrollIntoView({ block: "center" }));
+    const bounds = await page.$eval(".renovation-comparison-frame", (element) => {
+      const r = element.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height, viewport: document.body.getBoundingClientRect().width };
+    });
+    assert.equal(bounds.x, 0);
+    assert.equal(bounds.width, bounds.viewport);
+    assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "50");
+    await page.mouse.move(bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bounds.width * .2, bounds.y + bounds.height / 2, { steps: 10 });
+    await page.mouse.up();
+    assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "20");
+    await page.focus(".renovation-comparison-range");
+    for (const [key, value] of [["Home", "0"], ["ArrowRight", "1"], ["End", "100"], ["ArrowLeft", "99"]]) {
+      await page.keyboard.press(key);
+      await page.waitForFunction((value) => document.querySelector(".renovation-comparison-range").value === value, {}, value);
+    }
+    const images = await page.$$eval(".renovation-comparison img", (images) => images.map((image) => {
+      const r = image.getBoundingClientRect();
+      return { width: r.width, height: r.height, x: r.x, y: r.y };
+    }));
+    assert.deepEqual(images[0], images[1]);
+    await page.keyboard.press("Home");
+    for (let i = 0; i < 50; i++) await page.keyboard.press("ArrowRight");
+    await (await page.$(".renovation-comparison")).screenshot({ path: `${out}/comparison-1440.png` });
+  });
+  await test("comparison supports horizontal touch dragging and vertical page scrolling", async () => {
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await ready(page);
+    await page.$eval(".renovation-comparison-frame", (element) => element.scrollIntoView({ block: "center" }));
+    const bounds = await page.$eval(".renovation-comparison-frame", (element) => {
+      const r = element.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    });
+    const touch = await page.createCDPSession();
+    const swipe = async (startX, startY, endX, endY) => {
+      await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: startX, y: startY }] });
+      for (let i = 1; i <= 10; i++) await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: startX + (endX - startX) * i / 10, y: startY + (endY - startY) * i / 10 }] });
+      await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    };
+    try {
+      await swipe(bounds.width / 2, bounds.y + bounds.height / 2, bounds.width * .8, bounds.y + bounds.height / 2);
+      assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "80");
+      await (await page.$(".renovation-comparison")).screenshot({ path: `${out}/comparison-390.png` });
+      const scroll = await page.evaluate(() => scrollY);
+      await swipe(bounds.width / 2, bounds.y + bounds.height * .7, bounds.width / 2, bounds.y + bounds.height * .2);
+      await page.waitForFunction((scroll) => scrollY > scroll + 20, {}, scroll);
+    } finally { await touch.detach(); }
+    await ready(page);
+  });
+  await test("comparison image failure offers a working retry", async () => {
+    const offline = await browser.newPage();
+    let block = true;
+    try {
+      await offline.setRequestInterception(true);
+      offline.on("request", (request) => block && request.url().includes("/images/retail-before-") ? request.abort() : request.continue());
+      await ready(offline);
+      await offline.waitForSelector(".renovation-comparison-error");
+      assert.ok(await offline.$eval(".renovation-comparison-range", (input) => input.disabled));
+      block = false;
+      await offline.locator(".renovation-comparison-error button").click();
+      await offline.waitForFunction(() => !document.querySelector(".renovation-comparison-error") && [...document.querySelectorAll(".renovation-comparison img")].every((image) => image.complete && image.naturalWidth > 0));
+      assert.ok(await offline.$eval(".renovation-comparison-range", (input) => !input.disabled));
+    } finally { await offline.close(); }
   });
   await test("all client logos and review images load directly", async () => {
     assert.deepEqual(await loadImages(page), []);
