@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
-import { Container } from "./Container";
 import "./renovation-comparison.css";
 
 export function RenovationComparison() {
@@ -44,7 +43,7 @@ export function RenovationComparison() {
             <source
               type="image/webp"
               srcSet={[640, 960, 1536].map((width) => `/images/retail-${stage}-${width}.webp${suffix} ${width}w`).join(", ")}
-              sizes="100vw"
+              sizes="(min-width: 1440px) 660px, (min-width: 1024px) 50vw, 100vw"
             />
             <Image
               src={`/images/retail-${stage}-1536.webp${suffix}`}
@@ -88,11 +87,9 @@ export function RenovationComparison() {
           <button type="button" className="btn btn-ghost" onClick={() => { setFailed(false); setAttempt((value) => value + 1); }}>Повторить загрузку</button>
         </div>}
       </div>
-      <figcaption>
-        <Container className="renovation-comparison-caption">
-          <div><p className="renovation-comparison-title">Магазин электроники. До и после.</p><p id="renovation-comparison-help">Потяните ползунок, чтобы сравнить. С клавиатуры: стрелки влево и вправо.</p></div>
-          <span className="renovation-comparison-disclosure">AI-визуализация</span>
-        </Container>
+      <figcaption className="renovation-comparison-caption">
+        <div><p className="renovation-comparison-title">Магазин электроники</p><p id="renovation-comparison-help">Потяните ползунок для сравнения.<span className="sr-only"> С клавиатуры: стрелки влево и вправо.</span></p></div>
+        <span className="renovation-comparison-disclosure">AI-визуализация</span>
       </figcaption>
     </figure>
   );

@@ -51,7 +51,7 @@ export default function Home() {
 
     <section id="home" className="editorial-hero">
       <Container>
-        <div className="hero-composition hero-composition--comparison">
+        <div className="hero-composition">
           <div className="editorial-hero-copy">
             <p className="hero-location">Алматы <span>С {site.foundedYear} года</span></p>
             <h1>Ремонт офисов и магазинов под&nbsp;ключ.</h1>
@@ -63,9 +63,9 @@ export default function Home() {
             </div>
             <p className="hero-note"><Icon name="check" className="size-4" />Смета и договор до начала работ</p>
           </div>
+          <RenovationComparison />
         </div>
       </Container>
-      <RenovationComparison />
     </section>
 
     <section className="facts-band" aria-label="GulDar Group в цифрах"><Container><dl className="facts">{facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></Container></section>

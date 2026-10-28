@@ -189,7 +189,7 @@ try {
     assert.equal(await page.$$eval(".testimonial", (items) => items.length), 3);
     assert.ok(await page.$('a[href="/o-kompanii#rekvizity"]'));
   });
-  await test("comparison reveals the same room with mouse and keyboard at full viewport width", async () => {
+  await test("compact comparison sits beside hero copy with rounded corners and supports mouse and keyboard", async () => {
     await page.setViewport({ width: 1440, height: 1000, isMobile: false, hasTouch: false });
     await ready(page);
     await page.waitForFunction(() => [...document.querySelectorAll(".renovation-comparison img")].every((image) => image.complete && image.naturalWidth > 0));
@@ -197,14 +197,17 @@ try {
     await page.$eval(".renovation-comparison-frame", (element) => element.scrollIntoView({ block: "center" }));
     const bounds = await page.$eval(".renovation-comparison-frame", (element) => {
       const r = element.getBoundingClientRect();
-      return { x: r.x, y: r.y, width: r.width, height: r.height, viewport: document.body.getBoundingClientRect().width };
+      const copy = document.querySelector(".editorial-hero-copy").getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height, viewport: document.body.getBoundingClientRect().width, copyRight: copy.right, radius: parseFloat(getComputedStyle(element).borderRadius) };
     });
-    assert.equal(bounds.x, 0);
-    assert.equal(bounds.width, bounds.viewport);
+    assert.ok(bounds.x >= bounds.copyRight);
+    assert.ok(bounds.width < bounds.viewport * .6);
+    assert.ok(bounds.height <= 720);
+    assert.ok(bounds.radius >= 12);
     assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "50");
-    await page.mouse.move(bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     await page.mouse.down();
-    await page.mouse.move(bounds.width * .2, bounds.y + bounds.height / 2, { steps: 10 });
+    await page.mouse.move(bounds.x + bounds.width * .2, bounds.y + bounds.height / 2, { steps: 10 });
     await page.mouse.up();
     assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "20");
     await page.focus(".renovation-comparison-range");
@@ -236,11 +239,11 @@ try {
       await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     };
     try {
-      await swipe(bounds.width / 2, bounds.y + bounds.height / 2, bounds.width * .8, bounds.y + bounds.height / 2);
+      await swipe(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, bounds.x + bounds.width * .8, bounds.y + bounds.height / 2);
       assert.equal(await page.$eval(".renovation-comparison-range", (input) => input.value), "80");
       await (await page.$(".renovation-comparison")).screenshot({ path: `${out}/comparison-390.png` });
       const scroll = await page.evaluate(() => scrollY);
-      await swipe(bounds.width / 2, bounds.y + bounds.height * .7, bounds.width / 2, bounds.y + bounds.height * .2);
+      await swipe(bounds.x + bounds.width / 2, bounds.y + bounds.height * .7, bounds.x + bounds.width / 2, bounds.y + bounds.height * .2);
       await page.waitForFunction((scroll) => scrollY > scroll + 20, {}, scroll);
     } finally { await touch.detach(); }
     await ready(page);
