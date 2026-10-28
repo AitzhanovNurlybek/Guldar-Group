@@ -27,7 +27,8 @@ async function loadImages(page) {
   return page.evaluate(() => [...document.images].filter((image) => !image.naturalWidth).map((image) => image.currentSrc || image.src));
 }
 async function ready(page, route = "/") {
-  const response = await page.goto(`${base}${route}`, { waitUntil: "networkidle0" });
+  const navigation = await page.goto(`${base}${route}`, { waitUntil: "networkidle0" });
+  const response = navigation ?? await page.reload({ waitUntil: "networkidle0" });
   assert.ok([200, 304].includes(response.status()), `Unexpected HTTP ${response.status()} for ${route}`);
   await page.evaluate(() => document.fonts.ready);
 }
@@ -46,6 +47,12 @@ async function typeInto(page, selector, value) {
   await page.keyboard.up("Control");
   await page.keyboard.press("Backspace");
   if (value) await page.keyboard.type(value);
+}
+
+async function openMobilePanel(page, id) {
+  const selector = `#${id} > .mobile-disclosure-trigger`;
+  const closed = await page.$eval(selector, (button) => getComputedStyle(button).display !== "none" && button.getAttribute("aria-expanded") === "false");
+  if (closed) await page.locator(selector).click();
 }
 
 try {
@@ -107,6 +114,28 @@ try {
       }
     } finally { await themedPage.close(); }
   });
+  await test("mobile forms open on request, keep values and follow calculator links", async () => {
+    for (const id of ["calculator-options", "brief-options"]) {
+      assert.equal(await page.$eval(`#${id}-content`, (content) => getComputedStyle(content).display), "none");
+    }
+    await page.locator(".hero-budget-link").click();
+    await page.waitForSelector("#calc-area-input", { visible: true });
+    await typeInto(page, "#calc-area-input", "120");
+    await page.locator("#calculator-options-trigger").click();
+    assert.equal(await page.$eval("#calculator-options-content", (content) => getComputedStyle(content).display), "none");
+    await page.locator(".hero-budget-link").click();
+    await page.waitForSelector("#calc-area-input", { visible: true });
+    assert.equal(await page.$eval("#calc-area-input", (input) => input.value), "120");
+    await page.focus("#calculator-options-trigger");
+    await page.keyboard.press("Enter");
+    assert.equal(await page.$eval("#calculator-options-trigger", (button) => button.getAttribute("aria-expanded")), "false");
+    await page.setViewport({ width: 1440, height: 900 });
+    assert.notEqual(await page.$eval("#calculator-options-content", (content) => getComputedStyle(content).display), "none");
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await ready(page, "/#kalkulyator");
+    await page.waitForSelector("#calc-area-input", { visible: true });
+    await ready(page);
+  });
   await test("interior concept is labelled and real evidence stays accessible", async () => {
     assert.ok(await page.$eval(".hero-interior figcaption", (caption) => caption.textContent.includes("AI-визуализация")));
     assert.ok(await page.$eval(".hero-interior img", (image) => image.alt.includes("Визуализация")));
@@ -127,6 +156,14 @@ try {
     })));
     assert.equal(results.length, 3);
     assert.ok(results.every(Boolean));
+  });
+  await test("additional recommendation text expands and closes", async () => {
+    assert.equal(await page.$$(".testimonial-details").then((items) => items.length), 2);
+    await page.locator(".testimonial-details summary").click();
+    assert.ok(await page.$eval(".testimonial-details", (details) => details.open));
+    assert.ok(await page.$eval(".testimonial-details blockquote", (quote) => quote.innerText.length > 50));
+    await page.locator(".testimonial-details summary").click();
+    assert.ok(await page.$eval(".testimonial-details", (details) => !details.open));
   });
   await test("home section anchors and service links have destinations", async () => {
     assert.ok(await page.$$eval('a[href^="#"]', (links) => links.every((link) => link.hash.length < 2 || document.getElementById(decodeURIComponent(link.hash.slice(1))))));
@@ -169,6 +206,7 @@ try {
 
   await test("calculator handles empty, minimum, maximum and normal area", async () => {
     await page.$eval("#kalkulyator", (section) => section.scrollIntoView());
+    await openMobilePanel(page, "calculator-options");
     await page.waitForSelector("#calc-area-input");
     await typeInto(page, "#calc-area-input", "");
     await page.keyboard.press("Tab");
@@ -199,6 +237,7 @@ try {
   });
   await test("WhatsApp builder preserves choices and encodes comments", async () => {
     await page.$eval("#obsudit", (section) => section.scrollIntoView());
+    await openMobilePanel(page, "brief-options");
     await page.waitForSelector(".deferred-whatsapp textarea");
     assert.ok(await page.$eval(".builder-reset", (button) => button.disabled));
     await clickText(page, ".deferred-whatsapp button", "Проектирование");
@@ -291,6 +330,7 @@ try {
       await offlinePage.setRequestInterception(true);
       offlinePage.on("request", (request) => offline && request.url().includes(".js") ? request.abort() : request.continue());
       await offlinePage.$eval("#kalkulyator", (section) => section.scrollIntoView());
+      await openMobilePanel(offlinePage, "calculator-options");
       await offlinePage.waitForSelector(".deferred-calculator [role='alert']");
       assert.equal(await offlinePage.$eval(".deferred-calculator", (element) => element.getAttribute("aria-busy")), "false");
       offline = false;

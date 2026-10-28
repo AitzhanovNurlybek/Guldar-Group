@@ -277,7 +277,7 @@ export function WhatsAppFab() {
       }
       setControlsVisible(visibleControls.size > 0);
     });
-    document.querySelectorAll(".scene-showcase, .room-explorer, .deferred-widget, .price-calculator, .whatsapp-builder").forEach((element) => observer.observe(element));
+    document.querySelectorAll(".services-editorial, .testimonials-section, .scene-showcase, .room-explorer, .deferred-widget, .price-calculator, .whatsapp-builder").forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, [pathname]);
 
