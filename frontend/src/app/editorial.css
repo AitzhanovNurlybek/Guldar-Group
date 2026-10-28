@@ -33,10 +33,6 @@ main, .site-footer { overflow-wrap: anywhere; }
 .hero-interior figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem 1rem; padding: 1rem 0; font-size: .875rem; line-height: 1.6; color: var(--fg-2); }
 .editorial-hero .hero-technical-contact { width: 100%; color: var(--fg-2); border-color: var(--line); }
 .editorial-hero .hero-technical-contact strong { color: var(--fg); }
-.project-types { border-block: 1px solid var(--line); background: var(--ink-900); padding-block: 1.75rem; }
-.project-types > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
-.project-types p { color: var(--fg-2); font-size: .875rem; }
-.project-types ul { display: flex; flex-wrap: wrap; gap: .7rem 2rem; font-size: 1rem; font-weight: 600; }
 
 .clients-section { padding-block: 4rem; border-bottom: 1px solid var(--line); background: var(--ink-900); }
 .clients-heading { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem 3rem; }
@@ -226,9 +222,6 @@ main .panel, main .panel-strong, main .panel-glass { border-radius: 10px; }
   .editorial-hero .hero-technical-contact { margin-top: .8rem; padding-block: .7rem .2rem; }
   .hero-interior picture { aspect-ratio: 1.25; }
   .hero-interior figcaption { padding-block: .8rem; }
-  .project-types { padding-block: 1.3rem; }
-  .project-types > div { gap: .8rem; }
-  .project-types ul { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); font-size: .9375rem; gap: .7rem; }
   .clients-section { padding-block: 3rem; }
   .clients-heading { flex-direction: column; align-items: start; gap: .8rem; }
   .clients-section .client-logos { margin-top: 2rem; }
@@ -334,4 +327,81 @@ main .panel, main .panel-strong, main .panel-glass { border-radius: 10px; }
   .contact-channels a > span:nth-child(2) { margin-top: 0; }
   .technical-contact-panel { padding: 1.5rem; }
   .technical-contact-panel .btn { width: 100%; }
+}
+
+/* Визуальная система без фотографий: цифры-факты, значки в плитках, карточки вместо голых списков.
+   Нажатие — scale(.97); hover только для мыши; на телефоне поверхности остаются светлыми. */
+:root { --radius-card: 16px; }
+.btn:active, .contact-dock-action:active { transform: scale(.97); box-shadow: none; }
+.eyebrow { gap: .6rem; font-size: .8125rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); }
+.eyebrow::before { width: 8px; height: 8px; border-radius: 2px; background: var(--brand); }
+
+.hero-objects { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+.hero-objects li { padding: .35rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--ink-900); color: var(--fg-2); font-size: .875rem; font-weight: 600; line-height: 1.6; }
+
+.facts-band { padding-block: 2.75rem; border-block: 1px solid var(--line); background: var(--ink-900); }
+.facts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 2rem; }
+.facts > div { display: flex; flex-direction: column; gap: .5rem; min-width: 0; padding-left: 1.5rem; border-left: 1px solid var(--line); }
+.facts > div:first-child { padding-left: 0; border-left: 0; }
+.facts dd { order: -1; font-family: var(--font-display); font-size: clamp(2.25rem,3.4vw,3rem); font-weight: 700; line-height: 1; letter-spacing: -.04em; color: var(--brand); font-variant-numeric: tabular-nums; }
+.facts dt { max-width: 15rem; color: var(--fg-2); font-size: .9375rem; line-height: 1.55; }
+
+.services-editorial .service-card > div:first-child { display: flex; margin-bottom: 1.25rem; }
+.services-editorial .icon-tile { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; background: var(--ink-900); }
+.services-editorial .service-card-featured .icon-tile { border-color: transparent; background: #ffffff1a; color: var(--on-brand); }
+.service-scope { grid-row: 1 / span 4; }
+
+.agreement-list { display: grid; gap: .75rem; border-top: 0; }
+.agreement-list > div { padding: 1.5rem; border: 0; border-radius: var(--radius-card); background: var(--ink-850); }
+.agreement-list dt { gap: 1rem; }
+.agreement-list dd { margin-top: .5rem; padding-left: 3.5rem; }
+.agreement-list .icon-tile, .supply-directions .icon-tile { width: 40px; height: 40px; border-radius: 10px; background: var(--ink-900); color: var(--brand); }
+.supply-directions .icon-tile svg { color: var(--brand); }
+
+.faq-list { display: grid; gap: .625rem; border-top: 0; }
+.faq-list details { padding-inline: 1.25rem; border: 0; border-radius: 14px; background: var(--ink-850); }
+.faq-list summary { padding-block: 1.1rem; }
+.faq-list summary span { display: grid; place-items: center; flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 999px; background: var(--ink-900); font-size: 1.25rem; line-height: 1; }
+.faq-list p { padding: 0 0 1.25rem; }
+
+@media (hover: hover) and (pointer: fine) {
+  .faq-list summary:hover span { background: var(--brand); color: var(--on-brand); }
+}
+@media (max-width: 1023px) {
+  .facts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.75rem 1.25rem; }
+  .facts > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .services-editorial .icon-tile { border-color: transparent; background: var(--ink-850); }
+  .services-editorial .service-card-featured .icon-tile { background: var(--ink-900); color: var(--brand); }
+}
+@media (max-width: 639px) {
+  .hero-objects { margin-top: 1.25rem; }
+  .hero-objects li { background: var(--ink-850); border-color: transparent; }
+  .facts-band { padding-block: 2.25rem; }
+  .facts dd { font-size: 2.25rem; }
+  .facts dt { font-size: .875rem; }
+
+  .services-editorial .service-card-overview:not(.service-card-featured) { grid-template-columns: 44px minmax(0,1fr) 28px; column-gap: 1rem; }
+  .services-editorial .service-card-overview:not(.service-card-featured) > div:first-child { grid-column: 1; grid-row: 1 / span 2; align-self: center; margin: 0; }
+  .services-editorial .service-card-overview:not(.service-card-featured) h3,
+  .services-editorial .service-card-overview:not(.service-card-featured) .service-price { grid-column: 2; }
+  .services-editorial .service-card-overview:not(.service-card-featured) .service-link { grid-column: 3; }
+  .services-editorial .service-card-featured > div:first-child { margin-bottom: .25rem; }
+  .services-editorial .service-card-featured .service-link { grid-row: auto; }
+  .client-logos li:last-child:nth-child(3n+1) { grid-column: 2; }
+  .supply-directions > div { align-items: center; }
+  .site-footer ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 1rem; }
+  .site-footer ul > li { margin-block: 0; }
+
+  .agreement-list > div { padding: 1.25rem; }
+  .agreement-list dd { padding-left: 3.5rem; }
+
+  .process-grid { gap: 0; }
+  .process-grid li { position: relative; grid-template-columns: 2.5rem minmax(0,1fr); column-gap: 1rem; padding-bottom: 1.75rem; }
+  .process-grid li:last-child { padding-bottom: 0; }
+  .process-grid li:not(:last-child)::after { content: ""; position: absolute; left: calc(1.25rem - .5px); top: 2.5rem; bottom: 0; width: 1px; background: var(--line-strong); }
+  .process-grid .process-number { position: relative; z-index: 1; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1.5px solid var(--brand); border-radius: 999px; background: var(--ink-900); color: var(--brand); font-size: .9375rem; font-weight: 700; letter-spacing: 0; }
+  .process-grid h3 { padding-top: .45rem; }
+
+  .calculator-panel, .brief-panel { padding: 1.5rem 1.25rem; border-radius: 20px; background: var(--ink-850); }
+  .faq-list details { padding-inline: 1rem; }
 }

@@ -4,14 +4,15 @@ import { Container, SectionHead } from "@/components/Container";
 import { Icon, WhatsAppIcon } from "@/components/Icons";
 import { Reveal } from "@/components/Reveal";
 import { DeferredWidget } from "@/components/DeferredWidgets";
-import { ServiceCard } from "@/components/ServiceCard";
+import { IconTile, ServiceCard } from "@/components/ServiceCard";
 import { SceneProvider, SceneShowcase } from "@/components/scene/SceneBackground";
 import { HomeChoreography } from "@/components/HomeChoreography";
 import { ClientLogos } from "@/components/ClientLogos";
 import { Testimonials } from "@/components/Testimonials";
 import { RoomExplorer } from "@/components/scene/RoomExplorer";
 import { MobileDisclosure } from "@/components/MobileDisclosure";
-import { productGroups, services, site, waGreeting, waLink } from "@/lib/site";
+import { clients, productGroups, services, site, waGreeting, waLink } from "@/lib/site";
+import type { IconName } from "@/components/Icons";
 import { faqJsonLd, serializeJsonLd } from "@/lib/seo";
 
 const mainServices = ["pod-klyuch", "proektirovanie", "dizayn-proekt", "otdelka", "elektromontazh", "santehnika", "kto", "metallokonstrukcii"].map(
@@ -23,10 +24,18 @@ const process = [
   { title: "Выполняем ремонт", text: "Работаем по согласованному плану." },
   { title: "Сдаём помещение", text: "Проверяем результат вместе с вами." },
 ];
-const agreements = [
-  { title: "Состав работ", text: "Фиксируем перечень работ и материалов." },
-  { title: "Согласованная смета", text: "Изменения обсуждаем с вами заранее." },
-  { title: "Договор и акты", text: "Оформляем договор, счёт и акт выполненных работ." },
+const agreements: { title: string; text: string; icon: IconName }[] = [
+  { title: "Состав работ", text: "Фиксируем перечень работ и материалов.", icon: "layers" },
+  { title: "Согласованная смета", text: "Изменения обсуждаем с вами заранее.", icon: "ruler" },
+  { title: "Договор и акты", text: "Оформляем договор, счёт и акт выполненных работ.", icon: "shield" },
+];
+const years = new Date().getFullYear() - site.foundedYear;
+const yearsWord = years % 10 === 1 && years % 100 !== 11 ? "год" : [2, 3, 4].includes(years % 10) && ![12, 13, 14].includes(years % 100) ? "года" : "лет";
+const facts = [
+  { value: String(years), label: `${yearsWord} работаем в Алматы` },
+  { value: String(clients.length), label: "известных компаний среди заказчиков" },
+  { value: String(services.length), label: "видов работ — от проекта до обслуживания" },
+  { value: "1", label: "договор и смета на весь ремонт" },
 ];
 const faq = [
   { question: "С какими объектами работаете?", answer: "С офисами, магазинами, кафе и складами в Алматы. Выполняем ремонт целиком или отдельные работы." },
@@ -47,6 +56,7 @@ export default function Home() {
             <p className="hero-location">Алматы <span>С {site.foundedYear} года</span></p>
             <h1>Ремонт офисов и магазинов под&nbsp;ключ.</h1>
             <p className="editorial-hero-lead">Проектирование, ремонт и материалы для коммерческих помещений в Алматы.</p>
+            <ul className="hero-objects" aria-label="С какими помещениями работаем">{["Офисы", "Магазины", "Кафе и рестораны", "Склады"].map((place) => <li key={place}>{place}</li>)}</ul>
             <div className="editorial-hero-actions">
               <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Написать в WhatsApp</a>
               <a href="#kalkulyator" className="btn btn-ghost">Рассчитать стоимость</a>
@@ -64,7 +74,7 @@ export default function Home() {
       </Container>
     </section>
 
-    <div className="project-types" aria-label="С какими помещениями работаем"><Container><ul>{["Офисы", "Магазины", "Кафе и рестораны", "Склады"].map((place) => <li key={place}>{place}</li>)}</ul></Container></div>
+    <section className="facts-band" aria-label="GulDar Group в цифрах"><Container><dl className="facts">{facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></Container></section>
 
     <section className="section-space clients-section">
       <Container>
@@ -85,7 +95,7 @@ export default function Home() {
     <section id="o-kompanii" className="section-space assurance-section scroll-mt-28">
       <Container>
         <div className="assurance-layout"><Reveal><SectionHead eyebrow="Условия работы" title="Смета до начала работ." /><Link href="/o-kompanii#rekvizity" className="text-link mt-7">О компании и реквизиты<Icon name="arrowUpRight" className="size-5" /></Link></Reveal>
-          <dl className="agreement-list">{agreements.map((agreement) => <div key={agreement.title}><dt><Icon name="check" className="size-5" />{agreement.title}</dt><dd>{agreement.text}</dd></div>)}</dl>
+          <dl className="agreement-list">{agreements.map((agreement) => <div key={agreement.title}><dt><IconTile name={agreement.icon} size="sm" />{agreement.title}</dt><dd>{agreement.text}</dd></div>)}</dl>
         </div>
       </Container>
     </section>
@@ -103,7 +113,7 @@ export default function Home() {
 
     <section className="section-space reviews-section"><Container><Testimonials concise /></Container></section>
 
-    <section id="postavka" className="section-space supply-section scroll-mt-28"><Container><Reveal className="supply-panel"><div><p className="eyebrow">Поставка</p><h2 className="title mt-3">Материалы для ремонта.</h2><p className="mt-4 max-w-lg text-fg-2">Комплектуем объект по согласованному списку.</p><Link href="/produkciya" className="text-link mt-6">Каталог материалов<Icon name="arrowUpRight" className="size-5" /></Link></div><div className="supply-directions">{productGroups.map((group) => <div key={group.title}><Icon name={group.icon} className="size-6" /><div><h3>{group.title}</h3><p>{group.text}</p></div></div>)}</div></Reveal></Container></section>
+    <section id="postavka" className="section-space supply-section scroll-mt-28"><Container><Reveal className="supply-panel"><div><p className="eyebrow">Поставка</p><h2 className="title mt-3">Материалы для ремонта.</h2><p className="mt-4 max-w-lg text-fg-2">Комплектуем объект по согласованному списку.</p><Link href="/produkciya" className="text-link mt-6">Каталог материалов<Icon name="arrowUpRight" className="size-5" /></Link></div><div className="supply-directions">{productGroups.map((group) => <div key={group.title}><IconTile name={group.icon} size="sm" /><div><h3>{group.title}</h3><p>{group.text}</p></div></div>)}</div></Reveal></Container></section>
 
     <section className="section-space faq-section"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd(faq)) }} /><Container className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHead eyebrow="Вопросы" title="Перед началом работ." /><div className="faq-list">{faq.map((item) => <details key={item.question}><summary>{item.question}<span aria-hidden>+</span></summary><p>{item.answer}</p></details>)}</div></Container></section>
 
