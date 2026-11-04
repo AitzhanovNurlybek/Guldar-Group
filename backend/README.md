@@ -9,7 +9,7 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 # source .venv/bin/activate     # macOS / Linux
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env            # заполнить значения
 uvicorn app.main:app --reload --port 8000
 ```

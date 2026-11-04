@@ -1,0 +1,5 @@
+# Локальный запуск и тесты. На Vercel ставится только requirements.txt.
+-r requirements.txt
+uvicorn[standard]>=0.30
+pytest>=8.0
+httpx>=0.27

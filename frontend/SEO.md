@@ -10,7 +10,7 @@
 4. Добавьте домен в Google Search Console и подтвердите владение через DNS. Если выбрана проверка HTML-тегом для URL-prefix property, добавьте значение `content` в `GOOGLE_SITE_VERIFICATION` и пересоберите.
 5. Отправьте `/sitemap.xml` в Search Console. Проверьте главную и страницу `/uslugi/pod-klyuch` через URL Inspection и разметку через Rich Results Test.
 
-В Vercel Production без `NEXT_PUBLIC_SITE_URL` используется `VERCEL_PROJECT_PRODUCTION_URL`, а при его отсутствии — `https://guldar-group.vercel.app`. Если в production случайно перенесли localhost из `.env.example`, он также заменяется публичным адресом. Локальная разработка, Vercel Preview и окружения с `SITE_NOINDEX=true` получают `noindex, nofollow` и пустую карту сайта. robots.txt разрешает обход, чтобы поисковик мог прочитать noindex. Это настройка поиска, а не защита доступа.
+В Vercel Production без `NEXT_PUBLIC_SITE_URL` используется основной домен `https://guldargroup.kz` (подключён 2026-11-04, `www` перенаправляется на него). Если в production случайно перенесли localhost из `.env.example`, он также заменяется публичным адресом. Локальная разработка, Vercel Preview и окружения с `SITE_NOINDEX=true` получают `noindex, nofollow` и пустую карту сайта. robots.txt разрешает обход, чтобы поисковик мог прочитать noindex. Это настройка поиска, а не защита доступа.
 
 ## Что поможет продвижению дальше
 

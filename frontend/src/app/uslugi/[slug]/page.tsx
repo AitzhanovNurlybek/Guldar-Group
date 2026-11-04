@@ -4,8 +4,9 @@ import { Container } from "@/components/Container";
 import { Icon, WhatsAppIcon } from "@/components/Icons";
 import { PageHeader } from "@/components/PageHeader";
 import { serviceDetails } from "@/lib/service-details";
-import { absoluteUrl, pageMetadata, serializeJsonLd } from "@/lib/seo";
-import { site, waLink } from "@/lib/site";
+import { absoluteUrl, faqJsonLd, pageMetadata, serializeJsonLd } from "@/lib/seo";
+import { site, steps, waLink } from "@/lib/site";
+import { ClientLogos } from "@/components/ClientLogos";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -28,6 +29,8 @@ export default async function ServicePage({ params }: Props) {
   if (!service) notFound();
 
   const url = absoluteUrl(`/uslugi/${slug}`);
+  // Название услуги в тексте показывает, с какой страницы пришла заявка.
+  const waText = `Здравствуйте! Интересует: ${service.title}. Хочу узнать стоимость.`;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -54,8 +57,23 @@ export default async function ServicePage({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd(service.questions)) }} />
       <PageHeader eyebrow="GulDar Group · Алматы" title={service.title} lead={service.intro} />
       <Container className="space-y-12 pb-12 sm:space-y-16">
+        <section aria-label="Расчёт стоимости" className="landing-offer">
+          {service.price && <p className="landing-price"><span>Ориентир</span>{service.price}</p>}
+          <div className="flex flex-wrap gap-3">
+            <a href={waLink(waText)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Расчёт в WhatsApp</a>
+            <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="btn btn-ghost">Позвонить {site.phone}</a>
+          </div>
+          <ul className="landing-trust">
+            {[`Работаем с ${site.foundedYear} года`, "ТОО: договор, счёт, акт", "Смета до начала работ", "Материалы поставляем сами"].map((item) => <li key={item}><Icon name="check" className="size-4" />{item}</li>)}
+          </ul>
+        </section>
+        <section aria-labelledby="clients-title">
+          <h2 id="clients-title" className="eyebrow">Среди наших заказчиков</h2>
+          <div className="mt-5"><ClientLogos /></div>
+        </section>
         <nav aria-label="Хлебные крошки" className="flex flex-wrap items-center gap-2 text-sm text-fg-2">
           <Link href="/" className="hover:text-signal">Главная</Link>
           <span aria-hidden="true">/</span>
@@ -112,13 +130,25 @@ export default async function ServicePage({ params }: Props) {
           </div>
         </section>
 
+        <section aria-labelledby="steps-title">
+          <h2 id="steps-title" className="title">От заявки до сдачи</h2>
+          <ol className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, index) => (
+              <li key={step.title} className="panel rounded-2xl p-6">
+                <span className="text-sm font-extrabold text-signal">0{index + 1}</span>
+                <p className="mt-3 font-bold">{step.title}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
         <section className="panel-strong flex flex-wrap items-center justify-between gap-6 rounded-3xl p-6 sm:p-10">
           <div className="max-w-xl">
             <h2 className="title">Обсудим ваш объект</h2>
             <p className="mt-3 text-fg-2">Напишите, что планируете, и приложите фотографии или план помещения.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a href={waLink(`Здравствуйте! Интересует: ${service.title}. Хочу обсудить объект.`)} target="_blank" rel="noopener" className="btn btn-accent">
+            <a href={waLink(waText)} target="_blank" rel="noopener noreferrer" className="btn btn-accent">
               <WhatsAppIcon /> Обсудить в WhatsApp
             </a>
             <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="btn btn-ghost">Позвонить</a>

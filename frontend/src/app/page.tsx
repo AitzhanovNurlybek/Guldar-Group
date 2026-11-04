@@ -56,7 +56,7 @@ export default function Home() {
             <p className="hero-location">Алматы <span>С {site.foundedYear} года</span></p>
             <h1>Ремонт офисов и магазинов под&nbsp;ключ.</h1>
             <p className="editorial-hero-lead">Проектирование, ремонт и материалы для коммерческих помещений в Алматы.</p>
-            <ul className="hero-objects" aria-label="С какими помещениями работаем">{["Офисы", "Магазины", "Кафе и рестораны", "Склады"].map((place) => <li key={place}>{place}</li>)}</ul>
+            <ul className="hero-objects" aria-label="С какими помещениями работаем">{[["Офисы", "/uslugi/remont-ofisa"], ["Магазины", "/uslugi/remont-magazina"], ["Кафе и рестораны", "/uslugi/remont-kafe"], ["Склады", "/uslugi/remont-sklada"]].map(([place, href]) => <li key={place}><Link href={href} className="hero-object-link">{place}</Link></li>)}</ul>
             <div className="editorial-hero-actions">
               <a href={waLink(waGreeting)} target="_blank" rel="noopener noreferrer" className="btn btn-accent"><WhatsAppIcon className="size-5" />Написать в WhatsApp</a>
               <a href="#kalkulyator" className="btn btn-ghost">Рассчитать стоимость</a>

@@ -13,7 +13,7 @@ function parseOrigin(value: string): URL {
 function resolveSiteUrl(): string {
   const production = process.env.VERCEL_ENV === "production";
   const fallback = production
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() || "guldar-group.vercel.app"}`
+    ? "https://guldargroup.kz" // основной домен; *.vercel.app не должен попадать в canonical
     : "http://localhost:3000";
   const url = parseOrigin(process.env.NEXT_PUBLIC_SITE_URL?.trim() || fallback);
   if (production && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {

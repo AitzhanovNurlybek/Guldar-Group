@@ -21,14 +21,14 @@ test("local development uses localhost", async () => {
   assert.equal(await resolve(), "http://localhost:3000");
 });
 test("production has a public canonical without manual env configuration", async () => {
-  assert.equal(await resolve({ VERCEL_ENV: "production" }), "https://guldar-group.vercel.app");
+  assert.equal(await resolve({ VERCEL_ENV: "production" }), "https://guldargroup.kz");
 });
-test("production uses the Vercel production domain", async () => {
-  assert.equal(await resolve({ VERCEL_ENV: "production", VERCEL_PROJECT_PRODUCTION_URL: "guldar.kz" }), "https://guldar.kz");
+test("production ignores the *.vercel.app production alias", async () => {
+  assert.equal(await resolve({ VERCEL_ENV: "production", VERCEL_PROJECT_PRODUCTION_URL: "guldar-group.vercel.app" }), "https://guldargroup.kz");
 });
 for (const loopback of ["http://localhost:3000", "http://127.0.0.1:3000", "http://[::1]:3000"]) {
   test(`production ignores an accidentally copied local origin: ${loopback}`, async () => {
-    assert.equal(await resolve({ VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: loopback }), "https://guldar-group.vercel.app");
+    assert.equal(await resolve({ VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: loopback }), "https://guldargroup.kz");
   });
 }
 test("explicit origin overrides hosting defaults and is trimmed", async () => {
